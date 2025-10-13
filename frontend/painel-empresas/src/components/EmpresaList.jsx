@@ -1094,3 +1094,5 @@ const EmpresasList = ({ empresas: propEmpresas, setEmpresas: setPropEmpresas }) 
 };
 
 export default EmpresasList;
+
+// ESTAMOS AQUI, MEXEMOS NO BOTMANAGER E NO SCHEMA

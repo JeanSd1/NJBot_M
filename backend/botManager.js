@@ -12,59 +12,59 @@ const statusBots = {}; // { nomeEmpresa: { conectado: boolean, ultimaAtualizacao
 
 async function iniciarBot(empresa) {
   const pasta = path.join(__dirname, 'bots', empresa.nome, 'auth_info_baileys');
-  if (!fs.existsSync(pasta)) fs.mkdirSync(pasta, { recursive: true });
+  if (!fs.existsSync(pasta)) fs.mkdirSync(pasta, { recursive: true });
 
-  const { state, saveCreds } = await useMultiFileAuthState(pasta);
-  const sock = makeWASocket({ auth: state });
+const { state, saveCreds } = await useMultiFileAuthState(pasta);
+const sock = makeWASocket({ auth: state });
 
-  let resolveQRCode;
-  const qrCodePromise = new Promise(resolve => { resolveQRCode = resolve; });
+let resolveQRCode;
+const qrCodePromise = new Promise(resolve => { resolveQRCode = resolve; });
 
-  sock.ev.on('creds.update', saveCreds);
+sock.ev.on('creds.update', saveCreds);
 
-  sock.ev.on('connection.update', async (update) => {
-    const { connection, lastDisconnect, qr } = update;
+sock.ev.on('connection.update', async (update) => {
+const { connection, lastDisconnect, qr } = update;
 
-    if (qr) {
-      qrCodesGerados[empresa.nome] = await qrcode.toDataURL(qr);
-      resolveQRCode(qr);
-    }
-    
-    if (connection === 'close') {
-      const statusCode = lastDisconnect?.error?.output?.statusCode;
-      const loggedOut = statusCode === DisconnectReason.loggedOut;
-      const empresaAtualizada = await empresaDB.findById(empresa._id);
+if (qr) {
+ qrCodesGerados[empresa.nome] = await qrcode.toDataURL(qr);
+resolveQRCode(qr);
+}
 
-      // Limpa o QR Code do cache caso a conexão caia
-      if(qrCodesGerados[empresa.nome]) {
-          delete qrCodesGerados[empresa.nome];
-      }
+if (connection === 'close') {
+ const statusCode = lastDisconnect?.error?.output?.statusCode;
+ const loggedOut = statusCode === DisconnectReason.loggedOut;
+ const empresaAtualizada = await empresaDB.findById(empresa._id);
 
-      if (!loggedOut && empresaAtualizada?.botAtivo) {
-        console.log(`[RECONNECT] Reconectando bot de ${empresaAtualizada.nome}...`);
-        iniciarBot(empresaAtualizada);
+// Limpa o QR Code do cache caso a conexão caia
+if(qrCodesGerados[empresa.nome]) {
+delete qrCodesGerados[empresa.nome];
+ }
 
-        // >>> REMOVIDO: A linha statusBots[empresa._id] = { conectado: false, ... }
-        // é removida aqui. O status permanece o último conhecido até reconectar.
-      } else {
-        console.log(`[RECONNECT] Não reconectando: loggedOut=${loggedOut}, botAtivo=${empresaAtualizada?.botAtivo}`);
+if (!loggedOut && empresaAtualizada?.botAtivo) {
+ console.log(`[RECONNECT] Reconectando bot de ${empresaAtualizada.nome}...`);
+ iniciarBot(empresaAtualizada);
 
-        // MANTIDO: Se realmente foi logout, aí sim marca como desconectado permanente
-        statusBots[empresa._id] = { conectado: false, ultimaAtualizacao: new Date() };
-      }
-    }
+// >>> REMOVIDO: A linha statusBots[empresa._id] = { conectado: false, ... }
+ // é removida aqui. O status permanece o último conhecido até reconectar.
+ } else {
+console.log(`[RECONNECT] Não reconectando: loggedOut=${loggedOut}, botAtivo=${empresaAtualizada?.botAtivo}`);
 
-    if (connection === 'open') {
-      statusBots[empresa._id] = { conectado: true, ultimaAtualizacao: new Date() };
-      console.log(`🤖 Conectado com sucesso: ${empresa.nome}`);
-      
-      // Limpa o QR Code do cache quando a conexão é estabelecida
-      if (qrCodesGerados[empresa.nome]) {
-        delete qrCodesGerados[empresa.nome];
-        console.log(`[QR CODE] QR Code de ${empresa.nome} limpo após conexão.`);
-      }
-    }
-  });
+// MANTIDO: Se realmente foi logout, aí sim marca como desconectado permanente
+statusBots[empresa._id] = { conectado: false, ultimaAtualizacao: new Date() };
+ }
+}
+
+ if (connection === 'open') {
+ statusBots[empresa._id] = { conectado: true, ultimaAtualizacao: new Date() };
+ console.log(`🤖 Conectado com sucesso: ${empresa.nome}`);
+
+// Limpa o QR Code do cache quando a conexão é estabelecida
+if (qrCodesGerados[empresa.nome]) {
+ delete qrCodesGerados[empresa.nome];
+ console.log(`[QR CODE] QR Code de ${empresa.nome} limpo após conexão.`);
+ }
+ }
+ });
 
   const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
   const { WritableStreamBuffer } = require('stream-buffers');
@@ -167,22 +167,40 @@ async function iniciarBot(empresa) {
       }
 
       // Se atendimento humano ativo, apenas atualiza último contato
-      if (atendimentosManuais[chaveAtendimento]?.ativo) {
-        atendimentosManuais[chaveAtendimento].ultimoContato = new Date();
-        console.log(`👤 Atendimento humano ativo para: ${sender}`);
-        return;
-      }
+      // if (atendimentosManuais[chaveAtendimento]?.ativo) {
+      //   atendimentosManuais[chaveAtendimento].ultimoContato = new Date();
+      //   console.log(`👤 Atendimento humano ativo para: ${sender}`);
+      //   return;
+      // }
 
-      // Saudação inicial (só manda se ainda não tiver iniciado ou se resetou)
+      // // Saudação inicial (só manda se ainda não tiver iniciado ou se resetou)
+      // if (saudacoes.includes(textoLower) && !atendimentosManuais[chaveAtendimento].iniciado) {
+      //   atendimentosManuais[chaveAtendimento].iniciado = true;
+      //   atendimentosManuais[chaveAtendimento].ultimoContato = new Date();
+
+      //   await sock.sendMessage(sender, {
+      //     text: `Olá! 👋 Bem-vindo(a) à ${empresaAtualizada.nome}! Como posso te ajudar?`
+      //   });
+      //   return;
+      // }
+
       if (saudacoes.includes(textoLower) && !atendimentosManuais[chaveAtendimento].iniciado) {
-        atendimentosManuais[chaveAtendimento].iniciado = true;
-        atendimentosManuais[chaveAtendimento].ultimoContato = new Date();
+      atendimentosManuais[chaveAtendimento].iniciado = true;
+      atendimentosManuais[chaveAtendimento].ultimoContato = new Date();
 
-        await sock.sendMessage(sender, {
-          text: `Olá! 👋 Bem-vindo(a) à ${empresaAtualizada.nome}! Como posso te ajudar?`
-        });
-        return;
-      }
+      // 1. Define o texto de saudação: usa o campo do DB ou um fallback
+      const textoSaudacao = empresaAtualizada.msgBoasVindas || 
+      `Olá! 👋 Bem-vindo(a) à ${empresaAtualizada.nome}! Como posso te ajudar?`;
+
+      // 2. Garante que se o placeholder [Nome da Empresa] for usado no DB, ele seja substituído
+      const saudacaoFinal = textoSaudacao.replace('[Nome da Empresa]', empresaAtualizada.nome);
+
+      // 3. O sock.sendMessage permanece, enviando o texto dinâmico.
+      await sock.sendMessage(sender, {
+          text: saudacaoFinal 
+      });
+      return;
+  }
 
       // Atualiza último contato
       atendimentosManuais[chaveAtendimento].ultimoContato = new Date();

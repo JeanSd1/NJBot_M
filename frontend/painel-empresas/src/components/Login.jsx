@@ -77,12 +77,12 @@ const NJBot = styled.div`
   font-weight: 500;
   display: flex;
   gap: 0;
-  background-color: #2523236c;
+  background-color: #25232391;
   max-width: 20%;
-  padding: 3px;
+  padding: 4px;
   border-radius: 5px;
   margin: auto;
-
+  margin-bottom: 10px;
 `
 
 const Letter = styled.span`
