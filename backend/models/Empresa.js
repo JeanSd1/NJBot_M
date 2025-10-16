@@ -18,8 +18,34 @@ const EmpresaSchema = new mongoose.Schema({
   msgBoasVindas: {
     type: String,
     // Define um valor padrão para empresas existentes ou novas, se necessário.
-    default: "Olá! 👋 Bem-vindo(a) à [Nome da Empresa]! Como posso te ajudar?" 
-  }
+    default: "Olá! 👋 Bem-vindo(a)! Como posso te ajudar?" 
+  },
+  timeoutHumanoMinutos: {
+    type: Number,
+    default: 10 // Padrão de 10 minutos
+  },
+  msgFechado: { // MANTIDO e usado quando o dia está fechado
+        type: String,
+        default: 'Olá! Nosso horário de atendimento é de [HORARIO_INICIO]h às [HORARIO_FIM]h. Retornaremos assim que possível.'
+  },
+  horariosSemana: {
+        type: Map, // Usa um Map para { "domingo": { inicio: "HH:MM", fim: "HH:MM", ativo: boolean } }
+        of: new mongoose.Schema({
+            inicio: { type: String, default: '09:00' },
+            fim: { type: String, default: '18:00' },
+            ativo: { type: Boolean, default: true } // Indica se o bot deve funcionar neste dia
+        }),
+        default: {
+            // Padrão de segunda a sexta (Dias da semana são 0=Dom, 1=Seg... 6=Sab)
+            '1': { inicio: '09:00', fim: '18:00', ativo: true },
+            '2': { inicio: '09:00', fim: '18:00', ativo: true },
+            '3': { inicio: '09:00', fim: '18:00', ativo: true },
+            '4': { inicio: '09:00', fim: '18:00', ativo: true },
+            '5': { inicio: '09:00', fim: '18:00', ativo: true },
+            '6': { inicio: '00:00', fim: '00:00', ativo: false }, // Sábado fechado
+            '0': { inicio: '00:00', fim: '00:00', ativo: false }  // Domingo fechado
+        }
+    },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Empresa', EmpresaSchema);
