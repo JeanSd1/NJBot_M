@@ -1890,20 +1890,39 @@ const EmpresasList = ({ empresas: propEmpresas, setEmpresas: setPropEmpresas }) 
 
                       {dia.ativo ? (
                           <>
-                              <Input
-                                  type="time" // Usar tipo time para melhor UX
-                                  placeholder="Início"
-                                  value={dia.inicio}
-                                  onChange={(e) => handleHorarioChange(dia.id, 'inicio', e.target.value)}
-                                  style={{ width: '100px', padding: '8px' }}
-                              />
-                              <Input
-                                  type="time" // Usar tipo time para melhor UX
-                                  placeholder="Fim"
-                                  value={dia.fim}
-                                  onChange={(e) => handleHorarioChange(dia.id, 'fim', e.target.value)}
-                                  style={{ width: '100px', padding: '8px' }}
-                              />
+                             <Input
+                              type="time"
+                              placeholder="Início"
+                              value={dia.inicio}
+                              onChange={(e) => handleHorarioChange(dia.id, 'inicio', e.target.value)}
+                              style={{ width: '80px' }}
+                          />
+                          {/* NOVO: Início do Intervalo */}
+                          <Input
+                              type="time"
+                              placeholder="Pausa"
+                              value={dia.intervaloInicio}
+                              onChange={(e) => handleHorarioChange(dia.id, 'intervaloInicio', e.target.value)}
+                              style={{ width: '80px', border: '1px solid orange' }} // Destaque para o intervalo
+                          />
+                          
+                          {/* Fim do Intervalo */}
+                          <Input
+                              type="time"
+                              placeholder="Volta"
+                              value={dia.intervaloFim}
+                              onChange={(e) => handleHorarioChange(dia.id, 'intervaloFim', e.target.value)}
+                              style={{ width: '80px', border: '1px solid orange' }}
+                          />
+                          
+                          {/* Fim Principal (Fim do Turno da Tarde) */}
+                          <Input
+                              type="time"
+                              placeholder="Fim"
+                              value={dia.fim}
+                              onChange={(e) => handleHorarioChange(dia.id, 'fim', e.target.value)}
+                              style={{ width: '80px' }}
+                          />
                           </>
                       ) : (
                           <span style={{ color: '#dc2626', fontSize: '0.9rem', marginLeft: '10px' }}>Fechado/Bot Desligado</span>

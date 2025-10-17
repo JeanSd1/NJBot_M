@@ -338,30 +338,81 @@ const qrCodesGerados = {}; // { nomeEmpresa: base64QR }
 const statusBots = {}; // { nomeEmpresa: { conectado: boolean, ultimaAtualizacao: Date } }
 
 // 1. FUNÇÃO DE VERIFICAÇÃO DE HORÁRIO DE ATENDIMENTO
+// function estaEmHorarioComercial(empresa) {
+//     const agora = new Date();
+//     const diaAtual = agora.getDay().toString(); // 0 (Dom) a 6 (Sáb)
+    
+//     const horariosMap = empresa.horariosSemana || new Map();
+//     const configDia = horariosMap.get(diaAtual);
+
+//     if (!configDia || !configDia.ativo) {
+//         return false; // Dia inativo/fechado
+//     }
+
+//     const horaAtual = agora.getHours();
+//     const minutoAtual = agora.getMinutes();
+    
+//     // Assume 09:00 e 18:00 como fallback se as strings forem inválidas
+//     const [hInicio, mInicio] = (configDia.inicio || '09:00').split(':').map(Number);
+//     const [hFim, mFim] = (configDia.fim || '18:00').split(':').map(Number);
+    
+//     const minutosAgora = horaAtual * 60 + minutoAtual;
+//     const minutosInicio = hInicio * 60 + mInicio;
+//     const minutosFim = hFim * 60 + mFim;
+
+//     // Horário normal dentro do mesmo dia
+//     return minutosAgora >= minutosInicio && minutosAgora < minutosFim;
+// }
+
 function estaEmHorarioComercial(empresa) {
     const agora = new Date();
-    const diaAtual = agora.getDay().toString(); // 0 (Dom) a 6 (Sáb)
+    const diaAtual = agora.getDay().toString();
     
     const horariosMap = empresa.horariosSemana || new Map();
-    const configDia = horariosMap.get(diaAtual);
-
+    // Acessa as configurações do dia
+    const configDia = horariosMap.get ? horariosMap.get(diaAtual) : horariosMap[diaAtual]; 
+    
+    // 1. Checagem de Dia Ativo (Permanente)
     if (!configDia || !configDia.ativo) {
-        return false; // Dia inativo/fechado
+        return false; 
     }
 
+    // 2. Conversão para Minutos (para facilitar a comparação)
     const horaAtual = agora.getHours();
     const minutoAtual = agora.getMinutes();
+    const minutosAgora = horaAtual * 60 + minutoAtual;
     
-    // Assume 09:00 e 18:00 como fallback se as strings forem inválidas
+    // Turno da Manhã (Início Principal até Início do Intervalo)
     const [hInicio, mInicio] = (configDia.inicio || '09:00').split(':').map(Number);
+    const [hIntervaloInicio, mIntervaloInicio] = (configDia.intervaloInicio || '12:00').split(':').map(Number);
+    
+    const minutosInicio = hInicio * 60 + mInicio;
+    const minutosIntervaloInicio = hIntervaloInicio * 60 + mIntervaloInicio;
+
+    // Turno da Tarde (Fim do Intervalo até Fim Principal)
+    const [hIntervaloFim, mIntervaloFim] = (configDia.intervaloFim || '13:00').split(':').map(Number);
     const [hFim, mFim] = (configDia.fim || '18:00').split(':').map(Number);
     
-    const minutosAgora = horaAtual * 60 + minutoAtual;
-    const minutosInicio = hInicio * 60 + mInicio;
+    const minutosIntervaloFim = hIntervaloFim * 60 + mIntervaloFim;
     const minutosFim = hFim * 60 + mFim;
 
-    // Horário normal dentro do mesmo dia
-    return minutosAgora >= minutosInicio && minutosAgora < minutosFim;
+
+    // 3. Lógica de Verificação de Horário
+    
+    // Verifica se está no Turno 1 (Manhã)
+    const estaNoTurnoManha = (
+        minutosAgora >= minutosInicio &&
+        minutosAgora < minutosIntervaloInicio
+    );
+    
+    // Verifica se está no Turno 2 (Tarde)
+    const estaNoTurnoTarde = (
+        minutosAgora >= minutosIntervaloFim &&
+        minutosAgora < minutosFim
+    );
+
+    // O bot está ativo se estiver no Turno 1 OU no Turno 2
+    return estaNoTurnoManha || estaNoTurnoTarde;
 }
 
 
