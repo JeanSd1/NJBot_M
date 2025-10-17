@@ -1813,6 +1813,7 @@ const EmpresasList = ({ empresas: propEmpresas, setEmpresas: setPropEmpresas }) 
     }
   };
 
+
   const empresasFiltradas = currentEmpresas.filter((empresa) =>
     empresa.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     empresa.telefone.toLowerCase().includes(searchTerm.toLowerCase())
