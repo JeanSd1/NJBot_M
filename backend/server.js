@@ -180,23 +180,32 @@ app.delete('/api/empresas/:id', async (req, res) => {
 app.put('/api/empresas/:id/toggle-bot', async (req, res) => {
   try {
     const { id } = req.params;
+    console.log(`[TOGGLE] Requisição para alternar bot id=${id}, body=`, req.body);
 
     if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ error: 'ID inválido' });
 
     const empresa = await Empresa.findById(id);
     if (!empresa) return res.status(404).json({ message: 'Empresa não encontrada' });
 
+    const previous = empresa.botAtivo;
     empresa.botAtivo = !empresa.botAtivo;
     await empresa.save();
+    console.log(`[TOGGLE] Empresa ${id}: botAtivo changed ${previous} -> ${empresa.botAtivo}`);
 
     // Ligar/desligar bot via botManager
-    await botManager.toggleBot(empresa);
+    try {
+      await botManager.toggleBot(empresa);
+      console.log(`[TOGGLE] botManager.toggleBot completed for ${id}`);
+    } catch (bmErr) {
+      console.error(`[TOGGLE] Erro em botManager.toggleBot para ${id}:`, bmErr);
+      return res.status(500).json({ message: 'Erro ao alternar bot (botManager)', detail: bmErr.message || bmErr.toString() });
+    }
 
     res.status(200).json({ botAtivo: empresa.botAtivo });
 
   } catch (error) {
     console.error('Erro ao alternar bot:', error);
-    res.status(500).json({ message: 'Erro ao alternar bot' });
+    res.status(500).json({ message: 'Erro ao alternar bot', detail: error.message || error.toString() });
   }
 });
 
