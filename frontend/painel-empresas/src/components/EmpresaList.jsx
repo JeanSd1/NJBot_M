@@ -7,13 +7,12 @@ import { toast } from 'react-toastify';
 import { FiEdit, FiTrash2, FiRefreshCw } from 'react-icons/fi';
 
 const Container = styled.div`
-  max-width: 720px;
+  max-width: 920px;
   margin: 3rem auto;
   padding: 2rem;
-  background-color: #ffffff;
+  background-color: transparent;
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
 `;
 
 const Title = styled.h2`
@@ -73,14 +72,18 @@ const Button = styled.button`
   border-radius: 8px;
   border: none;
   cursor: pointer;
-  background-color: #2563eb;
+  background-color: var(--primary);
   color: white;
-  transition: background 0.2s;
+  transition: background 0.16s, transform 0.12s;
   margin-right: 0.75rem;
   margin-top: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 
   &:hover:not(:disabled) {
     background-color: #1e40af;
+    transform: translateY(-1px);
   }
 
   &:disabled {
@@ -107,8 +110,8 @@ const ButtonDanger = styled(Button)`
 `;
 
 const Item = styled.div`
-  background-color: #88b4df2f;
-  border: 1.5px solid #d1d5db;
+  background-color: var(--card);
+  border: 1px solid rgba(2,6,23,0.06);
   border-radius: 12px;
   padding: 1.2rem 1.5rem;
   margin-bottom: 2rem;
@@ -412,7 +415,8 @@ const EmpresasList = ({ empresas: propEmpresas, setEmpresas: setPropEmpresas }) 
 
   return (
     <Container>
-      <Title>Empresas Cadastradas:</Title>
+      <div className="app-shell">
+        <Title>Empresas Cadastradas:</Title>
       <Input
         type="text"
         placeholder="Buscar por nome ou telefone..."
@@ -588,7 +592,9 @@ const EmpresasList = ({ empresas: propEmpresas, setEmpresas: setPropEmpresas }) 
               <Button
                 onClick={() => gerarNovoQrCode(empresa._id)}
                 disabled={loadingEmpresa === empresa._id}
+                title="Gerar QR Code"
               >
+                <FiRefreshCw />
                 {loadingEmpresa === empresa._id ? 'Gerando QR Code...' : 'Gerar QR Code'}
               </Button>
               
@@ -599,13 +605,18 @@ const EmpresasList = ({ empresas: propEmpresas, setEmpresas: setPropEmpresas }) 
                 </QRCodeWrapper>
               )}
               
-              <Button onClick={() => iniciarEdicao(empresa)}>Editar</Button>
-              <ButtonDanger onClick={() => apagarEmpresa(empresa._id)}>Excluir</ButtonDanger>
+              <Button onClick={() => iniciarEdicao(empresa)} title="Editar">
+                <FiEdit /> Editar
+              </Button>
+              <ButtonDanger onClick={() => apagarEmpresa(empresa._id)} title="Excluir">
+                <FiTrash2 /> Excluir
+              </ButtonDanger>
               <Ia>Gemini</Ia>
             </>
           )}
         </Item>
       ))}
+      </div>
     </Container>
   );
 };
