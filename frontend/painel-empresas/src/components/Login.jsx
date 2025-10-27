@@ -32,9 +32,10 @@ const Left = styled.div`
 
 const Right = styled.div`
   flex: 1 1 420px;
-  background-image: url('https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80');
-  background-size: cover;
-  background-position: center;
+  background: #181a20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
 
 const Input = styled.input`
@@ -158,7 +159,9 @@ export default function Login() {
           </div>
         </Left>
 
-        <Right />
+        <Right>
+          <img src={require('../img/logo-njbot.png')} alt="Logo NJBot" style={{ maxWidth: '80%', maxHeight: '70%', borderRadius: '50%', boxShadow: '0 0 40px #0ff2, 0 0 0 8px #181a20' }} />
+        </Right>
       </Card>
     </Container>
   );
