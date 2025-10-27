@@ -264,7 +264,63 @@ async function iniciarBot(empresa) {
                     
                     return;
                 }
-                // ... (Resto da lógica de atendimento) ...
+                    // === DETECTAR PEDIDO DE ATENDENTE HUMANO ===
+                    const solicitarHumanoKeywords = ['#humano', 'humano', 'atendente', '#atendente', '#manual', 'manual'];
+                    if (solicitarHumanoKeywords.some(k => textoLower.includes(k))) {
+                        atendimento.ativo = true;
+                        atendimento.iniciado = true;
+                        atendimento.ultimoContato = new Date();
+
+                        try {
+                            await sock.sendMessage(sender, { text: '👨‍💼 Já estou transferindo você para um atendente humano. Por favor, aguarde...'});
+                        } catch (sendErr) {
+                            console.error(`❌ [${empresa.nome}] Erro ao avisar sobre transferência para humano:`, sendErr);
+                        }
+
+                        // Agendar liberação automática do atendimento humano após timeout configurado
+                        const timeoutMin = empresaAtualizada.timeoutHumanoMinutos || 10;
+                        setTimeout(() => {
+                            const a = atendimentosManuais[chaveAtendimento];
+                            if (a) {
+                                a.ativo = false;
+                                a.iniciado = false;
+                            }
+                        }, timeoutMin * 60 * 1000);
+
+                        // Aqui você poderia notificar um sistema de atendimento humano ou criar um ticket
+                        return;
+                    }
+                // === LÓGICA DE ATENDIMENTO: GERAR RESPOSTA AUTOMÁTICA ===
+                // Se o atendimento manual estiver ativo para essa conversa, não respondemos automaticamente
+                if (atendimento.ativo) {
+                    // Um humano já está atendendo esta conversa; não enviar resposta automática
+                    return;
+                }
+
+                // Atualiza último contato para controle de timeouts/spam
+                atendimento.ultimoContato = new Date();
+
+                try {
+                    // Chama o handler que usa a IA para gerar a resposta
+                    const resultado = await handleMensagem(empresaAtualizada._id.toString(), texto);
+
+                    // O handler pode retornar um objeto { resposta } ou uma string
+                    const respostaTexto = resultado?.resposta || (typeof resultado === 'string' ? resultado : null);
+
+                    if (respostaTexto) {
+                        await sock.sendMessage(sender, { text: respostaTexto });
+                    } else {
+                        // Fallback simples
+                        await sock.sendMessage(sender, { text: '🤖 Desculpe, não consegui gerar uma resposta no momento.' });
+                    }
+                } catch (err) {
+                    console.error(`❌ [${empresa.nome}] Erro ao gerar/enviar resposta automática:`, err);
+                    try {
+                        await sock.sendMessage(sender, { text: '❌ Ocorreu um erro ao processar sua mensagem. Tente novamente mais tarde.' });
+                    } catch (sendErr) {
+                        console.error(`❌ [${empresa.nome}] Erro ao enviar mensagem de erro:`, sendErr);
+                    }
+                }
 
             } catch (err) {
                 console.error('❌ Erro no processamento da mensagem:', err);
