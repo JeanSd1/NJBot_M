@@ -6,55 +6,68 @@ import { login } from '../services/loginService';
 const Container = styled.div`
   display: flex;
   height: 100vh;
-  background-color: #0d1b2a;
   align-items: center;
   justify-content: center;
+  background: radial-gradient(ellipse at bottom, rgba(10,10,20,0.8), rgba(2,6,23,1) 60%);
 `;
 
-const Form = styled.form`
-  background: linear-gradient(135deg, #c14040a2, #1e8fffb0);
-  background-size: 400% 400%;
-  animation: gradientShift 20s ease infinite;
-  
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 0 20px rgba(0,0,0,0.3);
+const Card = styled.div`
+  width: 100%;
+  max-width: 980px;
+  border-radius: 22px;
+  overflow: hidden;
+  display: flex;
+  box-shadow: 0 30px 60px rgba(2,6,23,0.6);
+`;
+
+const Left = styled.div`
+  flex: 1 1 420px;
+  padding: 48px 48px 56px 48px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.6), rgba(12,12,20,0.6));
+  color: #fff;
   display: flex;
   flex-direction: column;
-  width: 100%;
-  max-width: 350px;
+  gap: 12px;
+`;
 
-  @keyframes gradientShift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
+const Right = styled.div`
+  flex: 1 1 420px;
+  background-image: url('https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80');
+  background-size: cover;
+  background-position: center;
 `;
 
 const Input = styled.input`
-  padding: 0.8rem;
+  padding: 0.95rem 1rem;
   margin-bottom: 1rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  background: #e0e1dd;
-  margin-top: 10px;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  background: rgba(255,255,255,0.02);
+  color: #fff;
+  outline: none;
+  transition: box-shadow 0.18s, border-color 0.18s;
+
+  &::placeholder { color: rgba(255,255,255,0.55); }
+  &:focus {
+    box-shadow: 0 6px 30px rgba(142, 80, 255, 0.18), 0 0 0 6px rgba(142,80,255,0.06);
+    border-color: rgba(142,80,255,0.9);
+  }
 `;
 
 const Button = styled.button`
-  padding: 0.8rem;
-  background-color: #6f91b8;
-  color: white;
+  padding: 0.95rem;
+  background: linear-gradient(90deg,#ff6ec7,#ffd56b);
+  color: #0b1220;
   border: none;
-  border-radius: 8px;
-  font-weight: bold;
+  border-radius: 10px;
+  font-weight: 700;
   font-size: 1rem;
   cursor: pointer;
-  transition: background-color 0.2s;
+  box-shadow: 0 10px 30px rgba(255,110,199,0.12);
+  transition: transform .12s ease, box-shadow .12s ease;
 
-  &:hover {
-    background-color: #1b263b;
-  }
+  &:hover { transform: translateY(-2px); }
 `;
 
 const ErrorMessage = styled.p`
@@ -73,17 +86,13 @@ const Img = styled.img`
 `;
 
 const NJBot = styled.div`
-  font-size: 1.5rem;
-  font-weight: 500;
+  font-size: 2.1rem;
+  font-weight: 800;
   display: flex;
-  gap: 0;
-  background-color: #25232391;
-  max-width: 20%;
-  padding: 4px;
-  border-radius: 5px;
-  margin: auto;
-  margin-bottom: 10px;
-`
+  gap: .25rem;
+  align-items: center;
+  margin-bottom: 18px;
+`;
 
 const Letter = styled.span`
   color: ${props => props.color};
@@ -108,31 +117,49 @@ export default function Login() {
 
   return (
     <Container>
-      <Form onSubmit={handleLogin}>
-        <NJBot>
-          <Letter color="#1754ec">N</Letter>
-          <Letter color="#3163e4ff">J</Letter>
-          <Letter color="#C3263B">B</Letter>
-          <Letter color="#C3263B">ot</Letter>
-        </NJBot>
-        
-        <Input
-          type="email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          placeholder="Email"
-          required
-        />
-        <Input
-          type="password"
-          value={senha}
-          onChange={e => setSenha(e.target.value)}
-          placeholder="Senha"
-          required
-        />
-        <Button type="submit">Entrar</Button>
-        {erro && <ErrorMessage>{erro}</ErrorMessage>}
-      </Form>
+      <Card>
+        <Left>
+          <NJBot>
+            <Letter color="#EDE7FF">N</Letter>
+            <Letter color="#C6B6FF">J</Letter>
+            <Letter color="#FF83C0">B</Letter>
+            <Letter color="#FF83C0">ot</Letter>
+          </NJBot>
+
+          <h2 style={{ fontSize: '1.8rem', margin: 0, marginBottom: '8px' }}>Faça seu login.</h2>
+          <p style={{ color: 'rgba(255,255,255,0.6)', marginTop: 6, marginBottom: 18 }}>Acesse o painel de controle do NJBot</p>
+
+          <Input
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="Email"
+            required
+          />
+          <Input
+            type="password"
+            value={senha}
+            onChange={e => setSenha(e.target.value)}
+            placeholder="Senha"
+            required
+          />
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+            <a href="#" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'underline', fontSize: '0.9rem' }}>Esqueci minha senha</a>
+          </div>
+
+          <div style={{ marginTop: 18 }}>
+            <Button type="submit" onClick={handleLogin}>Entrar</Button>
+          </div>
+
+          {erro && <ErrorMessage>{erro}</ErrorMessage>}
+          <div style={{ marginTop: 12, fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)' }}>
+            <a href="#" style={{ color: 'rgba(255,255,255,0.85)' }}>Ainda não tenho uma conta</a>
+          </div>
+        </Left>
+
+        <Right />
+      </Card>
     </Container>
   );
 }
