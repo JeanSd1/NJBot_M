@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import api from '../services/api';
+import { toast } from 'react-toastify';
+import { FiEdit, FiTrash2, FiRefreshCw } from 'react-icons/fi';
 
 const Container = styled.div`
   max-width: 720px;
@@ -349,9 +351,10 @@ const EmpresasList = ({ empresas: propEmpresas, setEmpresas: setPropEmpresas }) 
     try {
       await api.delete(`/empresas/${idEmpresa}`);
       setEmpresasState((prev) => prev.filter((e) => e._id !== idEmpresa));
+      toast.success('Empresa excluída com sucesso.');
     } catch (err) {
       console.error('Erro ao excluir empresa:', err);
-      alert('Erro ao excluir empresa.');
+      toast.error('Erro ao excluir empresa.');
     }
   };
 
@@ -364,9 +367,10 @@ const EmpresasList = ({ empresas: propEmpresas, setEmpresas: setPropEmpresas }) 
           e._id === idEmpresa ? { ...e, botAtivo: res.data.botAtivo } : e
         )
       );
+      toast.success(`Bot ${res.data.botAtivo ? 'ativado' : 'desativado'} com sucesso.`);
     } catch (err) {
       console.error('Erro ao alternar status do bot:', err);
-      alert('Erro ao alternar status do bot.');
+      toast.error('Erro ao alternar status do bot.');
     }
   };
 
@@ -380,9 +384,10 @@ const EmpresasList = ({ empresas: propEmpresas, setEmpresas: setPropEmpresas }) 
         ...prev,
         [idEmpresa]: res.data.qrCode,
       }));
+      toast.success('QR Code gerado. Abra o app do WhatsApp para escanear.');
     } catch (err) {
       console.error('Erro ao gerar novo QR Code:', err);
-      alert('Erro ao gerar QR Code.');
+      toast.error('Erro ao gerar QR Code.');
     } finally {
       setLoadingEmpresa(null);
     }
