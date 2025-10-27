@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import logoNjbot from '../img/logo-njbot.png';
 import styled from 'styled-components';
 import { login } from '../services/loginService';
 // import logo from "../img/NJBot_original.jpg";
@@ -160,7 +161,7 @@ export default function Login() {
         </Left>
 
         <Right>
-          <img src={require('../img/logo-njbot.png')} alt="Logo NJBot" style={{ maxWidth: '80%', maxHeight: '70%', borderRadius: '50%', boxShadow: '0 0 40px #0ff2, 0 0 0 8px #181a20' }} />
+          <img src={logoNjbot} alt="Logo NJBot" style={{ maxWidth: '80%', maxHeight: '70%', borderRadius: '50%', boxShadow: '0 0 40px #0ff2, 0 0 0 8px #181a20' }} />
         </Right>
       </Card>
     </Container>
