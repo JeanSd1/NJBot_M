@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import logoNjbot from '../img/logo-njbot.png';
+import logoNjbot from '../img/NJBot.png';
 import styled from 'styled-components';
 import { login } from '../services/loginService';
 // import logo from "../img/NJBot_original.jpg";
@@ -35,8 +35,10 @@ const Right = styled.div`
   flex: 1 1 420px;
   background: #181a20;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: stretch;
+  justify-content: stretch;
+  min-height: 400px;
+  position: relative;
 `;
 
 const Input = styled.input`
@@ -73,7 +75,7 @@ const Button = styled.button`
 `;
 
 const ErrorMessage = styled.p`
-  color: #ff6b6b;
+  color: #d12121ff;
   margin-top: 1rem;
   text-align: center;
   font-weight: bold;
@@ -88,12 +90,17 @@ const Img = styled.img`
 `;
 
 const NJBot = styled.div`
-  font-size: 2.1rem;
-  font-weight: 800;
-  display: flex;
-  gap: .25rem;
-  align-items: center;
+  font-size: 2.8rem;
+  font-weight: 900;
+  font-family: 'Montserrat', 'Poppins', sans-serif;
   margin-bottom: 18px;
+  letter-spacing: 0.4px;
+  display: inline-block;
+  background: linear-gradient(90deg, #1ea3ff 12%, #7b6bff 50%, #ff2d55 88%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
 `;
 
 const Letter = styled.span`
@@ -121,12 +128,7 @@ export default function Login() {
     <Container>
       <Card>
         <Left>
-          <NJBot>
-            <Letter color="#EDE7FF">N</Letter>
-            <Letter color="#C6B6FF">J</Letter>
-            <Letter color="#FF83C0">B</Letter>
-            <Letter color="#FF83C0">ot</Letter>
-          </NJBot>
+          <NJBot>NJBot</NJBot>
 
           <h2 style={{ fontSize: '1.8rem', margin: 0, marginBottom: '8px' }}>Faça seu login.</h2>
           <p style={{ color: 'rgba(255,255,255,0.6)', marginTop: 6, marginBottom: 18 }}>Acesse o painel de controle do NJBot</p>
@@ -161,7 +163,24 @@ export default function Login() {
         </Left>
 
         <Right>
-          <img src={logoNjbot} alt="Logo NJBot" style={{ maxWidth: '80%', maxHeight: '70%', borderRadius: '50%', boxShadow: '0 0 40px #0ff2, 0 0 0 8px #181a20' }} />
+          <img 
+            src={logoNjbot} 
+            alt="Logo NJBot" 
+            style={{ 
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              padding: 0,
+              borderRadius: '0',
+              background: 'transparent',
+              boxShadow: 'none',
+              display: 'block',
+            }} 
+            onError={e => { e.target.style.display = 'none'; }}
+          />
         </Right>
       </Card>
     </Container>
