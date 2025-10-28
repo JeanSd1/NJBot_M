@@ -30,9 +30,7 @@ api.interceptors.response.use(response => {
   if (error.response) {
     switch (error.response.status) {
       case 401:
-        console.error('🔒 Não autorizado - redirecionando para login...');
-        // Redireciona para a tela de login se desejar:
-        // window.location.href = '/login';
+        console.error('🔒 Erro de autenticação');
         break;
       case 404:
         console.error('🚫 Endpoint não encontrado:', error.config.url);

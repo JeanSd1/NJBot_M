@@ -4,7 +4,98 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import api from '../services/api';
 import { toast } from 'react-toastify';
-import { FiEdit, FiTrash2, FiRefreshCw } from 'react-icons/fi';
+import { FiEdit, FiTrash2, FiRefreshCw, FiSettings } from 'react-icons/fi';
+
+const IAManagerContainer = styled.div`
+  position: relative;
+  display: inline-block;
+  z-index: 1000;
+`;
+
+const IAStatusBadge = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background-color: ${props => `${props.color}15`};
+  border: 2px solid ${props => `${props.color}30`};
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px ${props => `${props.color}10`};
+  cursor: pointer;
+
+  &:hover {
+    background-color: ${props => `${props.color}20`};
+  }
+
+  .settings-icon {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  &:hover .settings-icon {
+    opacity: 1;
+  }
+`;
+
+const IAPopup = styled.div`
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 0.5rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e2e8f0;
+  z-index: 1000;
+  min-width: 200px;
+  padding: 0.5rem;
+  isolation: isolate;
+`;
+
+const IAOption = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem;
+  border: none;
+  background: ${props => props.$active ? props.color + '15' : 'white'};
+  color: ${props => props.$active ? props.color : '#475569'};
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: ${props => props.color + '15'};
+  }
+
+  .icon {
+    font-size: 1.25rem;
+  }
+
+  .name {
+    font-weight: 500;
+  }
+`;
+
+const IAKeyInput = styled.input`
+  width: 100%;
+  padding: 0.5rem;
+  margin: 0.5rem 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+
+  &:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+  }
+`;
+
+
 
 const Container = styled.div`
   max-width: 920px;
@@ -98,6 +189,65 @@ const ButtonSecondary = styled(Button)`
 
   &:hover {
     background-color: #cbd5e1;
+  }
+`;
+
+const StatusContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0;
+  padding: 0.5rem;
+  background: #f8fafc;
+  border-radius: 8px;
+`;
+
+const StatusItem = styled.span`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #475569;
+`;
+
+const StatusBadge = styled.span`
+  color: ${props => props.color};
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+`;
+
+const Separator = styled.span`
+  color: #cbd5e1;
+`;
+
+const IAStatusContainer = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+
+
+const IABadge = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  background-color: ${props => `${props.color}10`};
+  border: 1px solid ${props => `${props.color}30`};
+  color: ${props => props.color};
+  font-size: 0.9rem;
+
+  span {
+    font-size: 1.1rem;
+  }
+
+  strong {
+    color: ${props => props.color};
+    font-weight: 600;
+  }
   }
 `;
 
@@ -220,14 +370,38 @@ const mapHorariosToArray = (horariosMap) => {
 
 
 const EmpresasList = ({ empresas: propEmpresas, setEmpresas: setPropEmpresas }) => {
-  // Configuração para usar as props
-  const currentEmpresas = propEmpresas;
-  const setEmpresasState = setPropEmpresas;
-
-  // MUDANÇA: O cache de QR Codes usa o ID como chave.
+  // Estados
   const [qrCodes, setQrCodes] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
   const [empresaEditando, setEmpresaEditando] = useState(null);
+  const [erro, setErro] = useState('');
+  const [loadingEmpresa, setLoadingEmpresa] = useState(null);
+  const [expandedPrompts, setExpandedPrompts] = useState({});
+  const [activeIAManager, setActiveIAManager] = useState(null);
+  const [updatingIA, setUpdatingIA] = useState(false);
+
+  // Configuração das IAs disponíveis
+  const iaConfig = {
+    gemini: { icon: "🤖", name: "Google Gemini", color: "#1a73e8" },
+    gpt: { icon: "🔮", name: "OpenAI GPT", color: "#10a37f" },
+    claude: { icon: "🧠", name: "Claude", color: "#7c3aed" },
+    publicai: { icon: "🌐", name: "Public AI", color: "#2563eb" }
+  };
+
+  // Handler para fechar o menu quando clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (activeIAManager && !event.target.closest('.ia-manager')) {
+        setActiveIAManager(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [activeIAManager]);
+  // MUDANÇA: O cache de QR Codes usa o ID como chave.
   const [formData, setFormData] = useState({
     nome: '',
     telefone: '',
@@ -239,10 +413,8 @@ const EmpresasList = ({ empresas: propEmpresas, setEmpresas: setPropEmpresas }) 
     msgFechado: '', 
     horariosSemana: {} // Inicializa como objeto vazio para o Map
   });
-  const [erro, setErro] = useState('');
-  const [loadingEmpresa, setLoadingEmpresa] = useState(null);
-  const [expandedPrompts, setExpandedPrompts] = useState({}); 
 
+  // Configuração das IAs disponíveis
   const [statusBots, setStatusBots] = useState({});
 
   // ... (useEffect para fetchStatus existente)
@@ -321,7 +493,7 @@ const EmpresasList = ({ empresas: propEmpresas, setEmpresas: setPropEmpresas }) 
 
     try {
       const res = await api.put(`/empresas/${idEmpresa}`, payload);
-      setEmpresasState((prev) => prev.map((e) => (e._id === idEmpresa ? res.data : e)));
+      setPropEmpresas((prev) => prev.map((e) => (e._id === idEmpresa ? res.data : e)));
       setEmpresaEditando(null);
     } catch (err) {
       console.error('Erro ao editar empresa:', err);
@@ -346,14 +518,14 @@ const EmpresasList = ({ empresas: propEmpresas, setEmpresas: setPropEmpresas }) 
 
   const apagarEmpresa = async (idEmpresa) => {
     // ... (lógica existente)
-    const empresa = currentEmpresas.find(e => e._id === idEmpresa);
+    const empresa = propEmpresas.find(e => e._id === idEmpresa);
     if (!empresa) return;
 
     if (!window.confirm(`Deseja excluir a empresa "${empresa.nome}"?`)) return;
 
     try {
       await api.delete(`/empresas/${idEmpresa}`);
-      setEmpresasState((prev) => prev.filter((e) => e._id !== idEmpresa));
+      setPropEmpresas((prev) => prev.filter((e) => e._id !== idEmpresa));
       toast.success('Empresa excluída com sucesso.');
     } catch (err) {
       console.error('Erro ao excluir empresa:', err);
@@ -365,7 +537,7 @@ const EmpresasList = ({ empresas: propEmpresas, setEmpresas: setPropEmpresas }) 
     // ... (lógica existente)
     try {
       const res = await api.put(`/empresas/${idEmpresa}/toggle-bot`);
-      setEmpresasState((prev) =>
+      setPropEmpresas((prev) =>
         prev.map((e) =>
           e._id === idEmpresa ? { ...e, botAtivo: res.data.botAtivo } : e
         )
@@ -397,13 +569,51 @@ const EmpresasList = ({ empresas: propEmpresas, setEmpresas: setPropEmpresas }) 
   };
 
 
-  const empresasFiltradas = currentEmpresas.filter((empresa) =>
+  const empresasFiltradas = propEmpresas.filter((empresa) =>
     empresa.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     empresa.telefone.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Função para atualizar a IA de uma empresa
+  const updateIA = async (empresaId, tipo, apiKey) => {
+    try {
+      setUpdatingIA(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Sessão expirada. Por favor, faça login novamente.');
+        return;
+      }
+
+      const response = await api.put(`/empresas/${empresaId}/ia`, {
+        tipo,
+        apiKey
+      });
+      
+      if (response.status === 200) {
+        setPropEmpresas(prevEmpresas =>
+          prevEmpresas.map(empresa =>
+            empresa._id === empresaId
+              ? { ...empresa, iaConfig: { tipo, apiKey } }
+              : empresa
+          )
+        );
+        toast.success('IA atualizada com sucesso!');
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar IA:', error);
+      if (error.response?.status === 401) {
+        toast.error('Sessão expirada. Por favor, atualize a página.');
+      } else {
+        toast.error('Erro ao atualizar IA. Tente novamente.');
+      }
+    } finally {
+      setUpdatingIA(false);
+      setActiveIAManager(null);
+    }
+  };
+
   const togglePrompt = (id) => {
-    setExpandedPrompts((prev) => ({
+    setExpandedPrompts(prev => ({
       ...prev,
       [id]: !prev[id]
     }));
@@ -580,14 +790,79 @@ const EmpresasList = ({ empresas: propEmpresas, setEmpresas: setPropEmpresas }) 
                 Bot ativo
               </Label>
 
-              <Paragraph>
-                Status:{" "}
-                {statusBots[empresa._id]?.conectado ? (
-                  <span style={{ color: "green", fontWeight: "bold" }}>🟢</span>
-                ) : (
-                  <span style={{ color: "red", fontWeight: "bold" }}>🔴</span>
-                )}
-              </Paragraph>
+              <StatusContainer>
+                <StatusItem>
+                  Status:{" "}
+                  {statusBots[empresa._id]?.conectado ? (
+                    <StatusBadge color="#16a34a">🟢 Online</StatusBadge>
+                  ) : (
+                    <StatusBadge color="#dc2626">🔴 Offline</StatusBadge>
+                  )}
+                </StatusItem>
+                <Separator>|</Separator>
+                <IAManagerContainer className="ia-manager">
+                  {(() => {
+                    // Determina o tipo de IA baseado na API key e tipo configurado
+                    let currentIA;
+                    const apiKey = empresa.iaConfig?.apiKey;
+                    
+                    if (apiKey && apiKey.toLowerCase().includes('publicai.co')) {
+                      currentIA = 'publicai';
+                    } else {
+                      currentIA = empresa.iaConfig?.tipo || 'gemini';
+                    }
+                    
+                    const ia = iaConfig[currentIA];
+                    
+                    return (
+                      <>
+                        <IAStatusBadge
+                          color={ia.color}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            setActiveIAManager(empresa._id);
+                          }}
+                          title="Clique para mudar a IA"
+                        >
+                          <span className="icon">{ia.icon}</span>
+                          <span className="name">{ia.name}</span>
+                          {empresa.iaConfig?.apiKey && 
+                            <span className="key-icon" title="API Key configurada">🔑</span>
+                          }
+                          <FiSettings className="settings-icon" size={14} style={{marginLeft: '4px'}} />
+                        </IAStatusBadge>
+
+                        {activeIAManager === empresa._id && (
+                          <IAPopup>
+                            {Object.entries(iaConfig).map(([tipo, config]) => (
+                              <IAOption
+                                key={tipo}
+                                color={config.color}
+                                $active={currentIA === tipo}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  const newApiKey = window.prompt(`Digite a API Key para ${config.name}:`, empresa.iaConfig?.apiKey || '');
+                                  if (newApiKey !== null) {
+                                    updateIA(empresa._id, tipo, newApiKey);
+                                  }
+                                }}
+                              >
+                                <span className="icon">{config.icon}</span>
+                                <span className="name">{config.name}</span>
+                                {currentIA === tipo && empresa.iaConfig?.apiKey && (
+                                  <span className="key-icon">🔑</span>
+                                )}
+                              </IAOption>
+                            ))}
+                          </IAPopup>
+                        )}
+                      </>
+                    );
+                  })()}
+                </IAManagerContainer>
+                </StatusContainer>
               
               <Button
                 onClick={() => gerarNovoQrCode(empresa._id)}
@@ -611,7 +886,6 @@ const EmpresasList = ({ empresas: propEmpresas, setEmpresas: setPropEmpresas }) 
               <ButtonDanger onClick={() => apagarEmpresa(empresa._id)} title="Excluir">
                 <FiTrash2 /> Excluir
               </ButtonDanger>
-              <Ia>Gemini</Ia>
             </>
           )}
         </Item>

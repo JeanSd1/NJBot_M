@@ -2,15 +2,15 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 
 const Container = styled.div`
-  width: 350px;
-  margin: 2rem auto;
+  max-width: 920px;
+  margin: 3rem auto;
   padding: 2rem;
   background: #ffffffb6;
   backdrop-filter: blur(6px);
   border: 1px solid #e0e0e0;
   border-radius: 12px;
   box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-  font-family: sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
 `;
 
 const Title = styled.h2`
@@ -26,6 +26,131 @@ const Form = styled.form`
   display: flex;
   flex-direction: column;
   gap: 1.2rem;
+`;
+
+const Select = styled.select`
+  padding: 0.8rem 1rem;
+  font-size: 1rem;
+  border: 1.8px solid #d0d7de;
+  border-radius: 8px;
+  transition: all 0.25s ease;
+  background: #fafafa;
+  font-family: sans-serif;
+  cursor: pointer;
+
+  &:hover {
+    border-color: #999;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: #2563eb;
+    background-color: #f0f6ff;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+  }
+`;
+
+const IAConfigContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+`;
+
+const IAConfigHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+`;
+
+const IAConfigTitle = styled.h3`
+  font-size: 1rem;
+  color: #334155;
+  margin: 0;
+`;
+
+const IAOptionsContainer = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+`;
+
+const IAOption = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  width: 100%;
+  background: ${props => props.active ? '#f0f6ff' : '#ffffff'};
+  border: 2px solid ${props => props.active ? '#2563eb' : '#e2e8f0'};
+  border-radius: 10px;
+  cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
+  opacity: ${props => props.disabled ? 0.7 : 1};
+  transition: all 0.2s ease;
+  position: relative;
+  
+  &:hover:not(:disabled) {
+    border-color: #2563eb;
+    background: ${props => props.active ? '#f0f6ff' : '#f8fafc'};
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  ${props => props.active && `
+    &::after {
+      content: '✓';
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      width: 24px;
+      height: 24px;
+      background: #2563eb;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: bold;
+      border: 2px solid white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+  `}
+`;
+
+const IAIcon = styled.div`
+  font-size: 1.5rem;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: ${props => props.active ? '#e0e7ff' : '#f1f5f9'};
+  border-radius: 8px;
+  transition: all 0.2s ease;
+`;
+
+const IALabel = styled.span`
+  font-size: 0.95rem;
+  color: #334155;
+  font-weight: 500;
+  flex: 1;
+`;
+
+const IADescription = styled.span`
+  font-size: 0.8rem;
+  color: #64748b;
+  display: block;
+  margin-top: 0.25rem;
 `;
 
 const Input = styled.input`
@@ -197,6 +322,8 @@ const NovaEmpresa = ({ onSuccess }) => {
   const [telefone, setTelefone] = useState('');
   const [ativo, setAtivo] = useState(true);
   const [promptIA, setPromptIA] = useState('');
+  const [tipoIA, setTipoIA] = useState('anthropic');
+  const [apiKey, setApiKey] = useState('');
   const [qrCode, setQrCode] = useState(null);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState('');
@@ -240,12 +367,20 @@ const NovaEmpresa = ({ onSuccess }) => {
     }
 
 
+    // Determina o tipo de IA com base na API key
+    const apiKeyTrimmed = apiKey.trim();
+    const finalTipoIA = apiKeyTrimmed.toLowerCase().includes('publicai.co') ? 'publicai' : tipoIA;
+
     const payload = {
       nome,
       telefone: telefoneLimpo,
       ativo,
       setores: [],
-      promptIA: promptIA.trim()
+      promptIA: promptIA.trim(),
+      iaConfig: {
+        tipo: finalTipoIA,
+        apiKey: apiKeyTrimmed
+      }
     };
 
     try {
@@ -388,6 +523,67 @@ const NovaEmpresa = ({ onSuccess }) => {
           required
           disabled={aguardandoQR || loading || conexaoSucesso}
         />
+
+        <IAConfigContainer>
+          <IAConfigHeader>
+            <IAConfigTitle>Configuração da IA</IAConfigTitle>
+          </IAConfigHeader>
+          
+          <IAOptionsContainer>
+            {[
+              { 
+                value: 'gemini', 
+                label: 'Google Gemini', 
+                icon: '🤖',
+                description: 'Modelo avançado do Google, rápido e preciso'
+              },
+              { 
+                value: 'gpt', 
+                label: 'OpenAI GPT', 
+                icon: '🔮',
+                description: 'Modelo versátil da OpenAI com amplo conhecimento'
+              },
+              { 
+                value: 'anthropic', 
+                label: 'Anthropic Claude', 
+                icon: '🧠',
+                description: 'IA especializada em respostas detalhadas e precisas'
+              },
+              { 
+                value: 'publicai', 
+                label: 'Public AI', 
+                icon: '🌐',
+                description: 'Modelo open source de alta performance'
+              }
+            ].map(ia => (
+              <IAOption 
+                key={ia.value}
+                active={tipoIA === ia.value}
+                onClick={() => !aguardandoQR && !loading && !conexaoSucesso && setTipoIA(ia.value)}
+                disabled={aguardandoQR || loading || conexaoSucesso}
+              >
+                <IAIcon active={tipoIA === ia.value}>{ia.icon}</IAIcon>
+                <div style={{ flex: 1 }}>
+                  <IALabel>{ia.label}</IALabel>
+                  <IADescription>{ia.description}</IADescription>
+                </div>
+              </IAOption>
+            ))}
+          </IAOptionsContainer>
+
+          <Input
+            type="password"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            placeholder={`API Key ${
+              tipoIA === 'gemini' ? 'do Google' : 
+              tipoIA === 'gpt' ? 'da OpenAI' : 
+              tipoIA === 'anthropic' ? 'da Anthropic' :
+              tipoIA === 'publicai' ? 'da Public AI' : ''
+            }`}
+            disabled={aguardandoQR || loading || conexaoSucesso}
+          />
+        </IAConfigContainer>
 
         <Label>
           <input

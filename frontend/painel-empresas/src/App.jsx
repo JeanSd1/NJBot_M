@@ -1,21 +1,26 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './components/Login';
+import Login from './components/LoginFixed';
 import Dashboard from './pages/Dashboard';
 import  { createGlobalStyle } from 'styled-components';
 
  const GlobalStyle = createGlobalStyle`
-      html, body, #root {
-        margin: 0;
-        padding: 0;
-        min-height: 100%;
-        background-color:rgba(13, 27, 42, 0.77); /* azul escuro */
-        font-family: sans-serif;
-      }
-    
-      body {
-        background-color: #0d1b2a;
-      }
-    `
+    /* import web fonts for better match with mockup */
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Poppins:wght@400;600&display=swap');
+
+    html, body, #root {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      background-color: rgba(13, 27, 42, 0.77);
+      font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    }
+
+    body {
+      background-color: #0d0d0d; /* darker base like the mockup */
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+`;
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('token');

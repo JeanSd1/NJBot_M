@@ -11,6 +11,17 @@ const EmpresaSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  iaConfig: {
+    tipo: {
+      type: String,
+      enum: ['gemini', 'gpt', 'claude', 'publicai'],
+      default: 'gemini'
+    },
+    apiKey: {
+      type: String,
+      required: false // Opcional, usa a key padrão se não fornecida
+    }
+  },
   promptIA: {
     type: String,
     required: true
@@ -80,5 +91,15 @@ const EmpresaSchema = new mongoose.Schema({
     }
   },
 }, { timestamps: true });
+
+// Middleware para auto-detectar o tipo de IA com base na API key
+EmpresaSchema.pre('save', function(next) {
+  if (this.iaConfig?.apiKey) {
+    if (this.iaConfig.apiKey.includes('publicai.co')) {
+      this.iaConfig.tipo = 'publicai';
+    }
+  }
+  next();
+});
 
 module.exports = mongoose.model('Empresa', EmpresaSchema);
