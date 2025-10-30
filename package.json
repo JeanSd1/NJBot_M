@@ -2,6 +2,9 @@
   "name": "njbot",
   "version": "1.0.0",
   "main": "index.js",
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
     "frontend": "cd frontend && cd painel-empresas && npm run dev",
     "backend": "cd backend && node server.js",
@@ -18,6 +21,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
+    "ffi-napi": "^4.0.3",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.15.1",
     "openai": "^6.7.0",
