@@ -791,15 +791,7 @@ const EmpresasList = ({ empresas: propEmpresas, setEmpresas: setPropEmpresas }) 
               </Label>
 
               <StatusContainer>
-                <StatusItem>
-                  Status:{" "}
-                  {statusBots[empresa._id]?.conectado ? (
-                    <StatusBadge color="#16a34a">🟢 Online</StatusBadge>
-                  ) : (
-                    <StatusBadge color="#dc2626">🔴 Offline</StatusBadge>
-                  )}
-                </StatusItem>
-                <Separator>|</Separator>
+                {/* Status text/badge removed as requested */}
                 <IAManagerContainer className="ia-manager">
                   {(() => {
                     // Determina o tipo de IA baseado na API key e tipo configurado
