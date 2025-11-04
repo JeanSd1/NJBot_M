@@ -5,7 +5,9 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     build-essential \
     python3 \
+    python3-dev \
     pkg-config \
+    libffi-dev \
     ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
