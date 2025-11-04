@@ -2,13 +2,10 @@
   "name": "njbot",
   "version": "1.0.0",
   "main": "index.js",
-  "engines": {
-    "node": "18.x"
-  },
   "scripts": {
     "frontend": "cd frontend && cd painel-empresas && npm run dev",
     "backend": "cd backend && node server.js",
-    "start:dev": "concurrently \"cd backend && node server.js\" \"cd frontend/painel-empresas && npm run dev\""
+    "front_back": "concurrently \"npm run backend\" \"npm run frontend\""
   },
   "keywords": [],
   "author": "",
@@ -26,10 +23,6 @@
     "mongoose": "^8.15.1",
     "openai": "^6.7.0",
     "qrcode": "^1.5.4",
-    "qrcode-terminal": "^0.12.0",
-    "stream-buffers": "^3.0.3"
-  },
-  "devDependencies": {
-    "concurrently": "^9.2.1"
+    "qrcode-terminal": "^0.12.0"
   }
 }
