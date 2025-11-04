@@ -2,10 +2,14 @@
   "name": "njbot",
   "version": "1.0.0",
   "main": "index.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "frontend": "cd frontend && cd painel-empresas && npm run dev",
     "backend": "cd backend && node server.js",
-    "front_back": "concurrently \"npm run backend\" \"npm run frontend\""
+    "front_back": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "start:dev": "concurrently \"cd backend && node server.js\" \"cd frontend/painel-empresas && npm run dev\""
   },
   "keywords": [],
   "author": "",
@@ -21,5 +25,8 @@
     "mongoose": "^8.15.1",
     "qrcode": "^1.5.4",
     "qrcode-terminal": "^0.12.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }
