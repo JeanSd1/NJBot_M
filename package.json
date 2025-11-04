@@ -5,6 +5,10 @@
   "engines": {
     "node": "20.x"
   },
+  "overrides": {
+    "node-addon-api": "^8.5.0",
+    "ffi-napi/node-addon-api": "^8.5.0"
+  },
   "scripts": {
     "frontend": "cd frontend && cd painel-empresas && npm run dev",
     "backend": "cd backend && node server.js",
