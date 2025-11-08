@@ -187,11 +187,11 @@ async function iniciarBot(empresa) {
         const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
         const { WritableStreamBuffer } = require('stream-buffers');
         const handleMensagem = require('./handlers/chatbot');
-        const { transcreverAudio } = require('./transcreverAudio');
+//         const { transcreverAudio } = require('./transcreverAudio');
         const { gerarRespostaGemini } = require('./gemini');
 
 
-        sock.ev.on('messages.upsert', async (m) => {
+        // sock.ev.on('messages.upsert', async (m) => {
             try {
                 const msg = m.messages?.[0];
                 if (!msg || !msg.message) return;
