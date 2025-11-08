@@ -273,11 +273,30 @@ app.get('/', (req, res) => {
 // --- Inicialização do Servidor ---
 
 // Iniciar todos bots ao subir servidor
+// Iniciar todos bots ao subir servidor (com tratamento de erro)
 (async () => {
-  const empresas = await Empresa.find();
-  empresas.forEach(empresa => botManager.iniciarBot(empresa));
-})();
-
-app.listen(PORT, () => {
+  try {
+    console.log('🔧 Aguardando conexão ao MongoDB antes de iniciar bots...');
+    // Aguarda um pouco para garantir conexão MongoDB
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    const empresas = await Empresa.find();
+    console.log(`📊 ${empresas.length} empresa(s) encontrada(s)`);
+    
+    for (const empresa of empresas) {
+      try {
+        console.log(`🚀 Tentando iniciar bot para: ${empresa.nome}`);
+        await botManager.iniciarBot(empresa);
+      } catch (err) {
+        console.error(`❌ Erro ao iniciar bot para ${empresa.nome}:`, err.message);
+        // Continua com a próxima empresa ao invés de derrubar o servidor
+      }
+    }
+    console.log('✅ Inicialização de bots completada');
+  } catch (err) {
+    console.error('❌ Erro durante inicialização de bots:', err);
+    console.log('⚠️ Servidor continuando sem inicializar bots');
+  }
+})();app.listen(PORT, () => {
   console.log(`🚀 Backend rodando em http://localhost:${PORT}`);
 });
