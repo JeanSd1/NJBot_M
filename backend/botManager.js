@@ -192,7 +192,7 @@ async function iniciarBot(empresa) {
 
 
         // sock.ev.on('messages.upsert', async (m) => {
-            try {
+//             try {
                 const msg = m.messages?.[0];
                 if (!msg || !msg.message) return;
 
