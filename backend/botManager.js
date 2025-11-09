@@ -313,10 +313,9 @@ async function iniciarBot(empresa) {
                         // Fallback simples
                         await sock.sendMessage(sender, { text: '🤖 Desculpe, não consegui gerar uma resposta no momento.' });
                     }
-                323
-                    
+} catch (err) {                    
                     console.error(`❌ [${empresa.nome}] Erro ao gerar/enviar resposta automática:`, err);
-                    try {
+                          try {
                         await sock.sendMessage(sender, { text: '❌ Ocorreu um erro ao processar sua mensagem. Tente novamente mais tarde.' });
                     } catch (sendErr) {
                         console.error(`❌ [${empresa.nome}] Erro ao enviar mensagem de erro:`, sendErr);
