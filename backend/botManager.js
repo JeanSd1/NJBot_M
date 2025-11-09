@@ -191,8 +191,8 @@ async function iniciarBot(empresa) {
         const { gerarRespostaGemini } = require('./gemini');
 
 
-        // sock.ev.on('messages.upsert', async (m) => {
-//             try {
+    // sock.ev.on('messages.upsert', async (m) => {
+           try {
                 const msg = m.messages?.[0];
                 if (!msg || !msg.message) return;
 
@@ -323,7 +323,7 @@ async function iniciarBot(empresa) {
                 }
 
            }
-        });
+    });
 
         // ⚠️ Não armazena o sock aqui, pois isso é feito na 'connection.update' (open)
         // bots[empresaId] = sock;
