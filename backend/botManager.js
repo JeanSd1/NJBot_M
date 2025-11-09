@@ -322,8 +322,7 @@ async function iniciarBot(empresa) {
                     }
                 }
 
-                console.error('❌ Erro no processamento da mensagem:', err);
-            }
+           }
         });
 
         // ⚠️ Não armazena o sock aqui, pois isso é feito na 'connection.update' (open)
