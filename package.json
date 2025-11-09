@@ -24,8 +24,8 @@
     "@whiskeysockets/baileys": "^6.7.18",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
-    "express": "^5.1.0"
-  "jsonwebtoken": "^9.0.2",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.15.1",
     "node-addon-api": "^8.5.0",
     "openai": "^6.7.0",
@@ -34,5 +34,7 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
+  }
+}
   }
 }
