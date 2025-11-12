@@ -1,9 +1,5 @@
 {
   "name": "njbot-frontend",
   "version": "1.0.0",
-  "private": true,
-  "description": "NJBot Frontend",
-  "scripts": {
-    "build": "mkdir -p build && cp -r . build/ 2>/dev/null || true"
-  }
+  "private": true
 }
