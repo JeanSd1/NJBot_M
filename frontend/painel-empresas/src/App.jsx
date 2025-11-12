@@ -35,6 +35,7 @@ function App() {
         <Route path="/dashboard" element={<PrivateRoute>
           <Dashboard />
         </PrivateRoute>} />
+        <Route path="/painel-empresas" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
       </Routes>
     </Router></>
   );
