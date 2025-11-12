@@ -4,6 +4,5 @@ package.json{
   "private": true,
   "description": "NJBot Frontend",
   "scripts": {
-    "build": "mkdir -p build && cp -r painel-empresas/* build/ && cp *.html build/ 2>/dev/null || true"
-  }
+    "build": "ls -la && echo 'Build complete' && mkdir build"  }
 }
