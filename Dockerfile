@@ -8,8 +8,8 @@ RUN apt-get update && \
     python3-dev \
     pkg-config \
     libffi-dev \
-    ca-certificates && \ \
-      git
+    ca-certificates && \  \
+      git \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/app
