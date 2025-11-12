@@ -12,7 +12,7 @@
     "frontend": "cd frontend/painel-empresas && npm run dev",
     "backend": "cd backend && npm start",
     "front_back": "concurrently \"npm run backend\" \"npm run frontend\"",
-    "start:dev": "concurrently \"cd backend && npm start\" \"cd frontend/painel-empresas && npm run dev\""
+    "start:dev": "concurrently \"cd backend && npm start\" \"cd frontend/painel-empresas && npm run dev\"",
         "start": "cd backend && npm start"
   },
   "keywords": [],
