@@ -1,38 +1,24 @@
 {
-  "name": "njbot",
-  "version": "1.0.0",
-  "main": "index.js",
-  "engines": {
-    "node": "20.x"
-  },
-  "overrides": {
-    "node-addon-api": "^8.5.0"
-  },
+  "name": "njbot-painel",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
   "scripts": {
-    "frontend": "cd frontend && cd painel-empresas && npm run dev",
-    "backend": "cd backend && node server.js",
-    "front_back": "concurrently \"npm run backend\" \"npm run frontend\"",
-    "start:dev": "concurrently \"cd backend && node server.js\" \"cd frontend/painel-empresas && npm run dev\""
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
-    "@hapi/boom": "^10.0.1",
-    "@whiskeysockets/baileys": "^6.7.18",
-    "cors": "^2.8.5",
-    "dotenv": "^16.5.0",
-    "express": "^5.1.0",
-    "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.15.1",
-    "node-addon-api": "^8.5.0",
-    "openai": "^6.7.0",
-    "qrcode": "^1.5.4",
-    "qrcode-terminal": "^0.12.0"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.20.0",
+    "styled-components": "^6.1.0",
+    "axios": "^1.6.2"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^5.0.8"
   }
 }
