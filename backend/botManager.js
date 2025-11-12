@@ -191,7 +191,6 @@ async function iniciarBot(empresa) {
         const { gerarRespostaGemini } = require('./gemini');
 
 
-    // sock.ev.on('messages.upsert', async (m) => {
 //                          const msg = m.messages?.[0];
                 if (!msg || !msg.message) return;
 
