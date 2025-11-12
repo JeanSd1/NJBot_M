@@ -228,13 +228,32 @@
             console.log('Login:', { email, password });
             showAlert('Conectando...', 'info');
             
-            // Aqui você conectaria com o backend real
-            // Exemplo:
-            // fetch('https://njbot-backend.onrender.com/api/login', {
-            //     method: 'POST',
-            //     headers: { 'Content-Type': 'application/json' },
-            //     body: JSON.stringify({ email, password })
-            // })
+            
+            // Fazer requisição para o backend
+            fetch('https://njbot-backend.onrender.com/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, senha: password })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.erro) {
+                    showAlert(data.erro, 'error');
+                    return;
+                }
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify({ email: data.email, nome: data.nome }));
+                    showAlert('Login bem-sucedido! Redirecionando...', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/painel-empresas';
+                    }, 1500);
+                }
+            })
+            .catch(err => {
+                console.error('Erro na requisição:', err);
+                showAlert('Erro ao conectar com o servidor', 'error');
+            })
             // .then(res => res.json())
             // .then(data => {
             //     if (data.token) {
@@ -243,12 +262,7 @@
             //     }
             // })
             
-            setTimeout(() => {
-                showAlert('Login bem-sucedido! Redirecionando...', 'success');
-                setTimeout(() => {
-                    alert('Integração com backend em desenvolvimento!');
-                }, 1000);
-            }, 1500);
+            
         });
         
         function showAlert(message, type = 'error') {
