@@ -1,10 +1,275 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <title>NJBot Frontend</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NJBot - Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .login-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+            padding: 40px;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        
+        .logo p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.1);
+        }
+        
+        .form-group input::placeholder {
+            color: #999;
+        }
+        
+        .remember-forgot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+        
+        .remember-forgot label {
+            display: flex;
+            align-items: center;
+            color: #666;
+            cursor: pointer;
+            margin: 0;
+        }
+        
+        .remember-forgot input[type="checkbox"] {
+            width: auto;
+            margin-right: 5px;
+        }
+        
+        .remember-forgot a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        .remember-forgot a:hover {
+            text-decoration: underline;
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-bottom: 15px;
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .login-btn:active {
+            transform: translateY(0);
+        }
+        
+        .signup-link {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .signup-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .signup-link a:hover {
+            text-decoration: underline;
+        }
+        
+        .alert {
+            display: none;
+            padding: 12px;
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .alert.show {
+            display: block;
+        }
+    </style>
 </head>
 <body>
-  <h1>NJBot Frontend</h1>
-  <p>Frontend do NJBot com Render</p>
+    <div class="login-container">
+        <div class="logo">
+            <h1>🤖 NJBot</h1>
+            <p>Sistema de Automação Inteligente</p>
+        </div>
+        
+        <div id="alert" class="alert"></div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    placeholder="seu@email.com" 
+                    required
+                >
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Senha</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    placeholder="Digite sua senha" 
+                    required
+                >
+            </div>
+            
+            <div class="remember-forgot">
+                <label>
+                    <input type="checkbox" name="remember">
+                    Lembrar de mim
+                </label>
+                <a href="#">Esqueceu a senha?</a>
+            </div>
+            
+            <button type="submit" class="login-btn">Entrar</button>
+            
+            <div class="signup-link">
+                Não tem conta? <a href="#">Criar conta</a>
+            </div>
+        </form>
+    </div>
+    
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const alertDiv = document.getElementById('alert');
+            
+            // Validação básica
+            if (!email || !password) {
+                showAlert('Por favor, preenca todos os campos!');
+                return;
+            }
+            
+            // Simular envio para backend
+            console.log('Login:', { email, password });
+            showAlert('Conectando...', 'info');
+            
+            // Aqui você conectaria com o backend real
+            // Exemplo:
+            // fetch('https://njbot-backend.onrender.com/api/login', {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify({ email, password })
+            // })
+            // .then(res => res.json())
+            // .then(data => {
+            //     if (data.token) {
+            //         localStorage.setItem('token', data.token);
+            //         window.location.href = '/dashboard';
+            //     }
+            // })
+            
+            setTimeout(() => {
+                showAlert('Login bem-sucedido! Redirecionando...', 'success');
+                setTimeout(() => {
+                    alert('Integração com backend em desenvolvimento!');
+                }, 1000);
+            }, 1500);
+        });
+        
+        function showAlert(message, type = 'error') {
+            const alertDiv = document.getElementById('alert');
+            alertDiv.textContent = message;
+            alertDiv.classList.add('show');
+            
+            if (type === 'success') {
+                alertDiv.style.backgroundColor = '#d4edda';
+                alertDiv.style.color = '#155724';
+                alertDiv.style.borderColor = '#c3e6cb';
+            } else if (type === 'info') {
+                alertDiv.style.backgroundColor = '#d1ecf1';
+                alertDiv.style.color = '#0c5460';
+                alertDiv.style.borderColor = '#bee5eb';
+            } else {
+                alertDiv.style.backgroundColor = '#f8d7da';
+                alertDiv.style.color = '#721c24';
+                alertDiv.style.borderColor = '#f5c6cb';
+            }
+        }
+    </script>
 </body>
 </html>
