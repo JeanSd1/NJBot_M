@@ -9,10 +9,10 @@
     "node-addon-api": "^8.5.0"
   },
   "scripts": {
-    "frontend": "cd frontend && cd painel-empresas && npm run dev",
-    "backend": "cd backend && node server.js",
+    "frontend": "cd frontend/painel-empresas && npm run dev",
+    "backend": "cd backend && npm start",
     "front_back": "concurrently \"npm run backend\" \"npm run frontend\"",
-    "start:dev": "concurrently \"cd backend && node server.js\" \"cd frontend/painel-empresas && npm run dev\""
+    "start:dev": "concurrently \"cd backend && npm start\" \"cd frontend/painel-empresas && npm run dev\""
   },
   "keywords": [],
   "author": "",
