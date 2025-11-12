@@ -297,7 +297,7 @@ app.get('/', (req, res) => {
     console.error('❌ Erro durante inicialização de bots:', err);
     console.log('⚠️ Servidor continuando sem inicializar bots');
   }
-})
+})();
   app.listen(PORT, () => {
   console.log(`🚀 Backend rodando em http://localhost:${PORT}`);
 });
