@@ -192,8 +192,7 @@ async function iniciarBot(empresa) {
 
 
     // sock.ev.on('messages.upsert', async (m) => {
-           try {
-                const msg = m.messages?.[0];
+//                          const msg = m.messages?.[0];
                 if (!msg || !msg.message) return;
 
                 const sender = msg.key.remoteJid;
