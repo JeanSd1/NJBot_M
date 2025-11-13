@@ -5,11 +5,21 @@ import './ListaEmpresas.css';
 export default function ListaEmpresas() {
   const [bots, setBots] = useState([]);
   const [busca, setBusca] = useState('');
+  const [qrCodes, setQrCodes] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
     const botsSalvos = JSON.parse(localStorage.getItem('bots') || '[]');
     setBots(botsSalvos);
+    
+    // Gerar URL de QR Code para cada bot
+    const qrObj = {};
+    botsSalvos.forEach(bot => {
+      // Usar API QR Server para gerar QR Code
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://njbot-frontend.onrender.com/bot/${bot.id}`;
+      qrObj[bot.id] = qrUrl;
+    });
+    setQrCodes(qrObj);
   }, []);
 
   const handleLogout = () => {
@@ -24,8 +34,14 @@ export default function ListaEmpresas() {
     alert('Bot excluído com sucesso!');
   };
 
-  const handleGerarQR = () => {
-    alert('QR Code gerado com sucesso!');
+  const handleDownloadQR = (botId, botName) => {
+    const qrUrl = qrCodes[botId];
+    const link = document.createElement('a');
+    link.href = qrUrl;
+    link.download = `QRCode-${botName}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const botsFiltrados = bots.filter(bot => 
@@ -73,12 +89,18 @@ export default function ListaEmpresas() {
                   </div>
 
                   <div className="qr-section">
-                    <button className="btn-qr" onClick={handleGerarQR}>
-                      📋 Gerar QR Code
+                    <img 
+                      src={qrCodes[bot.id]} 
+                      alt="QR Code"
+                      className="qr-image"
+                    />
+                    <button 
+                      className="btn-download-qr"
+                      onClick={() => handleDownloadQR(bot.id, bot.nomeEmpresa)}
+                      title="Baixar QR Code"
+                    >
+                      💾 Baixar QR
                     </button>
-                    <div className="qr-placeholder">
-                      [QR Code]
-                    </div>
                   </div>
                 </div>
               </div>
