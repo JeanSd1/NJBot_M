@@ -12,11 +12,15 @@ export default function ListaEmpresas() {
     const botsSalvos = JSON.parse(localStorage.getItem('bots') || '[]');
     setBots(botsSalvos);
     
-    // Gerar URL de QR Code para cada bot
+    // Gerar QR Code com link do WhatsApp para cada bot
     const qrObj = {};
     botsSalvos.forEach(bot => {
-      // Usar API QR Server para gerar QR Code
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://njbot-frontend.onrender.com/bot/${bot.id}`;
+      // Limpar número do WhatsApp (remover caracteres especiais)
+      const numberClean = bot.whatsapp.replace(/\D/g, '');
+      // URL do WhatsApp para conversar com o bot
+      const waUrl = `https://wa.me/${numberClean}`;
+      // Gerar QR Code com essa URL
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(waUrl)}`;
       qrObj[bot.id] = qrUrl;
     });
     setQrCodes(qrObj);
@@ -34,14 +38,11 @@ export default function ListaEmpresas() {
     alert('Bot excluído com sucesso!');
   };
 
-  const handleDownloadQR = (botId, botName) => {
-    const qrUrl = qrCodes[botId];
-    const link = document.createElement('a');
-    link.href = qrUrl;
-    link.download = `QRCode-${botName}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleGerarQR = (botId) => {
+    const numberClean = bots.find(b => b.id === botId).whatsapp.replace(/\D/g, '');
+    const waUrl = `https://wa.me/${numberClean}`;
+    // Abrir WhatsApp diretamente
+    window.open(waUrl, '_blank');
   };
 
   const botsFiltrados = bots.filter(bot => 
@@ -91,15 +92,15 @@ export default function ListaEmpresas() {
                   <div className="qr-section">
                     <img 
                       src={qrCodes[bot.id]} 
-                      alt="QR Code"
+                      alt="QR Code WhatsApp"
                       className="qr-image"
                     />
                     <button 
                       className="btn-download-qr"
-                      onClick={() => handleDownloadQR(bot.id, bot.nomeEmpresa)}
-                      title="Baixar QR Code"
+                      onClick={() => handleGerarQR(bot.id)}
+                      title="Gerar QR Code para WhatsApp"
                     >
-                      💾 Baixar QR
+                      📋 Gerar QR
                     </button>
                   </div>
                 </div>
