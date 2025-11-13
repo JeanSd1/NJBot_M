@@ -1,0 +1,131 @@
+.cadastro-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.cadastro-box {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  padding: 40px;
+  width: 100%;
+  max-width: 600px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.cadastro-box h1 {
+  font-size: 28px;
+  color: #333;
+  margin: 0 0 5px 0;
+  text-align: center;
+}
+
+.cadastro-box h2 {
+  font-size: 18px;
+  color: #666;
+  margin: 0 0 30px 0;
+  text-align: center;
+  font-weight: 600;
+}
+
+.cadastro-box h3 {
+  font-size: 14px;
+  color: #333;
+  margin: 20px 0 15px 0;
+  font-weight: 600;
+}
+
+.cadastro-box form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.cadastro-box input,
+.cadastro-box textarea {
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.cadastro-box input:focus,
+.cadastro-box textarea:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.cadastro-box textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.ia-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.ia-options label {
+  display: flex;
+  flex-direction: column;
+  padding: 15px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.ia-options label:hover {
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.ia-options label.selected {
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.ia-options input[type="radio"] {
+  margin: 0 0 8px 0;
+  cursor: pointer;
+}
+
+.ia-options span {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.ia-options p {
+  font-size: 12px;
+  color: #666;
+  margin: 5px 0 0 0;
+}
+
+.btn-cadastro {
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+}
+
+.btn-cadastro:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
