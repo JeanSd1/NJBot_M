@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 
 const EmpresaSchema = new mongoose.Schema({
   nome: {
@@ -99,7 +100,64 @@ EmpresaSchema.pre('save', function(next) {
       this.iaConfig.tipo = 'publicai';
     }
   }
+  
+  
+  // Encryption utilities for API keys
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-key-change-in-production';
+const ALGORITHM = 'aes-256-cbc';
+
+function encryptApiKey(apiKey) {
+  if (!apiKey) return apiKey;
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv(ALGORITHM, Buffer.from(ENCRYPTION_KEY, 'utf8').slice(0, 32), iv);
+  let encrypted = cipher.update(apiKey, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  return iv.toString('hex') + ':' + encrypted;
+}
+
+function decryptApiKey(encryptedApiKey) {
+  if (!encryptedApiKey || !encryptedApiKey.includes(':')) return encryptedApiKey;
+  try {
+    const parts = encryptedApiKey.split(':');
+    const iv = Buffer.from(parts[0], 'hex');
+    const decipher = crypto.createDecipheriv(ALGORITHM, Buffer.from(ENCRYPTION_KEY, 'utf8').slice(0, 32), iv);
+    let decrypted = decipher.update(parts[1], 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+  } catch (err) {
+    console.error('Error decrypting API key:', err.message);
+    return encryptedApiKey;
+  }
+}
+
+// Middleware to encrypt API key on save
+EmpresaSchema.pre('save', function(next) {
+  if (this.iaConfig && this.iaConfig.apiKey && !this.iaConfig.apiKey.includes(':')) {
+    this.iaConfig.apiKey = encryptApiKey(this.iaConfig.apiKey);
+  }
   next();
+});
+
+// Middleware to decrypt API key on find/findOne
+EmpresaSchema.post('findOne', function(doc) {
+  if (doc && doc.iaConfig && doc.iaConfig.apiKey) {
+    doc.iaConfig.apiKey = decryptApiKey(doc.iaConfig.apiKey);
+  }
+});
+
+// Instance method to get decrypted API key
+EmpresaSchema.methods.getDecryptedApiKey = function() {
+  if (this.iaConfig && this.iaConfig.apiKey) {
+    return decryptApiKey(this.iaConfig.apiKey);
+  }
+  return null;
+};
+
+// Static method to encrypt API key
+EmpresaSchema.statics.encryptApiKey = function(apiKey) {
+  return encryptApiKey(apiKey);
+};
+next();
 });
 
 module.exports = mongoose.model('Empresa', EmpresaSchema);
