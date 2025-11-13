@@ -1,13 +1,15 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Login from './components/LoginFixed';
-import Dashboard from './pages/Dashboard';
+import Login from './pages/Login';
+import CadastroBot from './pages/CadastroBot';
+import ListaEmpresas from './pages/ListaEmpresas';
 
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/cadastro" element={<CadastroBot />} />
+        <Route path="/empresas" element={<ListaEmpresas />} />
       </Routes>
     </Router>
   );
