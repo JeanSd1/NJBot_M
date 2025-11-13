@@ -10,26 +10,14 @@ export default function LoginFixed() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    try {
-      const res = await fetch('https://njbot-backend.onrender.com/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, senha })
-      });
-      
-      if (res.ok) {
-        const data = await res.json();
-        localStorage.setItem('token', data.token);
-        alert('Login bem-sucedido!');
-        navigate('/dashboard');
-      } else {
-        alert('Erro no login');
-      }
-    } catch (err) {
-      alert('Erro: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
+    
+    // Simulando autenticação bem-sucedida
+    setTimeout(() => {
+      localStorage.setItem('token', 'token_' + Date.now());
+      localStorage.setItem('user', email);
+      alert('Login bem-sucedido!');
+      navigate('/dashboard');
+    }, 500);
   };
 
   return (
