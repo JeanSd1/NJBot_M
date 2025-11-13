@@ -244,3 +244,40 @@
   transform: scale(1.1);
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
 }
+
+
+  /* Estilos para as abas */
+.tabs-container {
+  display: flex;
+  gap: 10px;
+  margin: 20px 20px 0 20px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+  background: rgba(67, 56, 202, 0.3);
+  border-radius: 8px 8px 0 0;
+  padding: 0;
+}
+
+.tab {
+  flex: 1;
+  padding: 15px 20px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-bottom: 3px solid transparent;
+  text-align: center;
+}
+
+.tab:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tab.active {
+  color: #fff;
+  border-bottom-color: #00ff88;
+  background: rgba(0, 255, 136, 0.1);
+}
