@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import api from '../services/api';
-import { toast } from 'react-toastify';
 import { FiEdit, FiTrash2, FiRefreshCw, FiSettings } from 'react-icons/fi';
 
 const IAManagerContainer = styled.div`
