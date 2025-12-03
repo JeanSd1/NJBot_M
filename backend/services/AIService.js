@@ -99,13 +99,13 @@ class AIService {
   }
 
   /**
-   * Call Anthropic Claude API
+   * Call Anthropic Claude API (supports multiple models including Claude Haiku 4.5)
    */
-  static async callClaude(apiKey, prompt, clientMessage) {
+  static async callClaude(apiKey, prompt, clientMessage, model = 'claude-3-5-haiku-20241022') {
     const url = 'https://api.anthropic.com/v1/messages';
     
     const payload = {
-      model: 'claude-3-sonnet-20240229',
+      model: model,
       max_tokens: 500,
       system: prompt,
       messages: [

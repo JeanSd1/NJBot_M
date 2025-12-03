@@ -1,16 +1,33 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Login.css';
+import api from '../services/api';
 
 export default function Login() {
   const [email, setEmail] = useState('admin@njbot.com');
   const [password, setPassword] = useState('senha');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    localStorage.setItem('token', 'njbot_token_' + Date.now());
-    navigate('/cadastro');
+    setLoading(true);
+    try {
+      const res = await api.post('/login', { email, senha: password });
+      const { token } = res.data;
+      if (token) {
+        localStorage.setItem('token', token);
+        navigate('/empresas');
+      } else {
+        alert('Resposta inválida do servidor');
+      }
+    } catch (err) {
+      console.error('Erro no login:', err);
+      const msg = err?.response?.data?.error || 'Erro ao efetuar login';
+      alert(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -37,7 +54,7 @@ export default function Login() {
               required
             />
             <a href="#">Esqueceu minha senha</a>
-            <button type="submit">Entrar</button>
+            <button type="submit" disabled={loading}>{loading ? 'Entrando...' : 'Entrar'}</button>
           </form>
           <p className="signup-text">Ainda não tenho uma conta</p>
         </div>

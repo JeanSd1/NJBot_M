@@ -5,12 +5,14 @@ const mongoose = require('mongoose');
 const path = require('path');
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const Empresa = require('./models/Empresa');
+const User = require('./models/User');
 const botManager = require('./botManager');
-
 const { statusBots } = require('./botManager');
+
+const { requireAuth, requireRole, isMaster } = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -26,32 +28,115 @@ mongoose.connect(process.env.MONGO_URI, {
 
 const JWT_SECRET = process.env.JWT_SECRET || 'chavejwtsegura';
 
-const ADMIN_EMAIL = process.env.LOGIN_FIXO_EMAIL
-const ADMIN_PASSWORD = process.env.LOGIN_FIXO_SENHA
+const ADMIN_EMAIL = process.env.LOGIN_FIXO_EMAIL;
+const ADMIN_PASSWORD = process.env.LOGIN_FIXO_SENHA;
 
-const USUARIO_FIXO = {
-  email: ADMIN_EMAIL,
-  senha: ADMIN_PASSWORD,
-  nome: 'Administrador'
-};
+// --- Rotas de Autenticação (Users) ---
 
-// --- Rotas de Autenticação ---
-
+// Login: verifica user no banco (email + senha). Se não existir, tenta credencial fixa (compatibilidade)
 app.post('/api/login', async (req, res) => {
   const { email, senha } = req.body;
+  try {
+    const user = await User.findOne({ email: email?.toLowerCase() });
+    if (user) {
+      const valid = await user.validatePassword(senha);
+      if (!valid) return res.status(401).json({ error: 'Email ou senha inválidos' });
+      const token = jwt.sign({ id: user._id.toString(), email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '8h' });
+      return res.json({ token, nome: user.nome || user.email, email: user.email, role: user.role });
+    }
 
-  if (email !== USUARIO_FIXO.email || senha !== USUARIO_FIXO.senha) {
-    return res.status(401).json({ erro: 'Email ou senha inválidos' });
+    // Fallback para credenciais fixas em .env (antigo comportamento)
+    if (email === ADMIN_EMAIL && senha === ADMIN_PASSWORD) {
+      // garante que exista um usuário master correspondente
+      let master = await User.findOne({ email: ADMIN_EMAIL });
+      if (!master) {
+        master = new User({ email: ADMIN_EMAIL, nome: 'Administrador', role: 'master' });
+        await master.setPassword(ADMIN_PASSWORD);
+        await master.save();
+      }
+      const token = jwt.sign({ id: master._id.toString(), email: master.email, role: master.role }, JWT_SECRET, { expiresIn: '8h' });
+      return res.json({ token, nome: master.nome || master.email, email: master.email, role: master.role });
+    }
+
+    return res.status(401).json({ error: 'Email ou senha inválidos' });
+  } catch (err) {
+    console.error('Erro no login:', err);
+    return res.status(500).json({ error: 'Erro interno no login' });
   }
+});
 
-  const token = jwt.sign({ email: USUARIO_FIXO.email, nome: USUARIO_FIXO.nome }, JWT_SECRET, { expiresIn: '8h' });
-  res.json({ token, nome: USUARIO_FIXO.nome, email: USUARIO_FIXO.email });
+// Criar usuário (master-only)
+app.post('/api/users', requireAuth, requireRole('master'), async (req, res) => {
+  try {
+    const { nome, email, senha, role } = req.body;
+    if (!email || !senha) return res.status(400).json({ error: 'Email e senha são obrigatórios' });
+    const exists = await User.findOne({ email: email.toLowerCase() });
+    if (exists) return res.status(400).json({ error: 'Usuário já existe' });
+    const user = new User({ nome, email: email.toLowerCase(), role: role || 'client' });
+    await user.setPassword(senha);
+    await user.save();
+    res.status(201).json({ message: 'Usuário criado', user: { id: user._id, email: user.email, role: user.role } });
+  } catch (err) {
+    console.error('Erro ao criar usuário:', err);
+    res.status(500).json({ error: 'Erro ao criar usuário' });
+  }
+});
+
+// Listar usuários (master-only)
+app.get('/api/users', requireAuth, requireRole('master'), async (req, res) => {
+  try {
+    const users = await User.find().select('-passwordHash');
+    res.json(users);
+  } catch (err) {
+    console.error('Erro ao listar usuários:', err);
+    res.status(500).json({ error: 'Erro ao listar usuários' });
+  }
+});
+
+// Atualizar usuário (master-only)
+app.put('/api/users/:id', requireAuth, requireRole('master'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nome, role, senha } = req.body;
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
+    if (nome) user.nome = nome;
+    if (role) user.role = role;
+    if (senha) await user.setPassword(senha);
+    await user.save();
+    res.json({ message: 'Usuário atualizado' });
+  } catch (err) {
+    console.error('Erro ao atualizar usuário:', err);
+    res.status(500).json({ error: 'Erro ao atualizar usuário' });
+  }
+});
+
+// Deletar usuário (master-only)
+app.delete('/api/users/:id', requireAuth, requireRole('master'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    await User.findByIdAndDelete(id);
+    res.json({ message: 'Usuário deletado' });
+  } catch (err) {
+    console.error('Erro ao deletar usuário:', err);
+    res.status(500).json({ error: 'Erro ao deletar usuário' });
+  }
+});
+
+// Rota para ver perfil atual
+app.get('/api/me', requireAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-passwordHash');
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao buscar usuário' });
+  }
 });
 
 
 // --- Rotas de Gerenciamento de Empresas (CRUD) ---
 
-app.post('/api/empresas', async (req, res) => {
+app.post('/api/empresas', requireAuth, async (req, res) => {
     const { 
         nome, promptIA, telefone, ativo, 
         msgBoasVindas, timeoutHumanoMinutos, msgFechado, horariosSemana
@@ -61,10 +146,12 @@ app.post('/api/empresas', async (req, res) => {
       const empresaExistente = await Empresa.findOne({ nome });
       if (empresaExistente) return res.status(400).json({ error: 'Empresa já existe.' });
 
-      const novaEmpresa = new Empresa({ 
+        const ownerId = (req.user && req.user.role === 'master' && req.body.owner) ? req.body.owner : (req.user && req.user.id) || null;
+        const novaEmpresa = new Empresa({ 
           nome, promptIA, telefone, botAtivo: ativo,
-          msgBoasVindas, timeoutHumanoMinutos, msgFechado, horariosSemana
-      });
+          msgBoasVindas, timeoutHumanoMinutos, msgFechado, horariosSemana,
+          owner: ownerId
+        });
       await novaEmpresa.save(); // Salva para ter o _id
 
       // ✅ CORREÇÃO CRÍTICA: USAR ID NO CAMINHO DA PASTA (Resolve ENOENT)
@@ -84,9 +171,14 @@ app.post('/api/empresas', async (req, res) => {
   }
 });
 
-app.get('/api/empresas', async (req, res) => {
+app.get('/api/empresas', requireAuth, async (req, res) => {
   try {
-    const empresas = await Empresa.find();
+    let empresas;
+    if (req.user && req.user.role === 'master') {
+      empresas = await Empresa.find();
+    } else {
+      empresas = await Empresa.find({ owner: req.user.id });
+    }
     return res.json(empresas);
   } catch (err) {
     console.error(err);
@@ -95,7 +187,7 @@ app.get('/api/empresas', async (req, res) => {
 });
 
 // Rota para buscar uma única empresa por ID
-app.get('/api/empresas/:id', async (req, res) => {
+app.get('/api/empresas/:id', requireAuth, async (req, res) => {
     const { id } = req.params;
     
     try {
@@ -108,7 +200,11 @@ app.get('/api/empresas/:id', async (req, res) => {
       if (!empresa) {
         return res.status(404).json({ error: 'Empresa não encontrada.' });
       }
-  
+
+      // Permissão: master ou owner
+      const isOwner = empresa.owner && empresa.owner.toString() === req.user.id;
+      if (req.user.role !== 'master' && !isOwner) return res.status(403).json({ error: 'Permissão negada' });
+
       return res.json(empresa);
     } catch (error) {
       console.error('❌ Erro ao buscar empresa por ID:', error);
@@ -117,7 +213,7 @@ app.get('/api/empresas/:id', async (req, res) => {
 });
 
 
-app.put('/api/empresas/:id', async (req, res) => {
+app.put('/api/empresas/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { 
       nome, promptIA, telefone, botAtivo, 
@@ -129,6 +225,10 @@ app.put('/api/empresas/:id', async (req, res) => {
 
     const empresaAntiga = await Empresa.findById(id);
     if (!empresaAntiga) return res.status(404).json({ error: 'Empresa não encontrada.' });
+
+    // Permissão: master ou owner
+    const isOwner = empresaAntiga.owner && empresaAntiga.owner.toString() === req.user.id;
+    if (req.user.role !== 'master' && !isOwner) return res.status(403).json({ error: 'Permissão negada' });
 
     const empresaAtualizada = await Empresa.findByIdAndUpdate(
       id,
@@ -153,13 +253,16 @@ app.put('/api/empresas/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/empresas/:id', async (req, res) => {
+app.delete('/api/empresas/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ error: 'ID inválido' });
 
     const empresa = await Empresa.findById(id);
     if (!empresa) return res.status(404).json({ message: 'Empresa não encontrada' });
+
+    const isOwner = empresa.owner && empresa.owner.toString() === req.user.id;
+    if (req.user.role !== 'master' && !isOwner) return res.status(403).json({ error: 'Permissão negada' });
 
     await Empresa.findByIdAndDelete(id);
 
@@ -177,7 +280,7 @@ app.delete('/api/empresas/:id', async (req, res) => {
   }
 });
 
-app.put('/api/empresas/:id/toggle-bot', async (req, res) => {
+app.put('/api/empresas/:id/toggle-bot', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     console.log(`[TOGGLE] Requisição para alternar bot id=${id}, body=`, req.body);
@@ -186,6 +289,9 @@ app.put('/api/empresas/:id/toggle-bot', async (req, res) => {
 
     const empresa = await Empresa.findById(id);
     if (!empresa) return res.status(404).json({ message: 'Empresa não encontrada' });
+
+    const isOwner = empresa.owner && empresa.owner.toString() === req.user.id;
+    if (req.user.role !== 'master' && !isOwner) return res.status(403).json({ error: 'Permissão negada' });
 
     const previous = empresa.botAtivo;
     empresa.botAtivo = !empresa.botAtivo;
@@ -219,6 +325,16 @@ app.get('/api/qr/:id', async (req, res) => {
 
     const empresa = await Empresa.findById(id);
     if (!empresa) return res.status(404).json({ error: 'Empresa não encontrada.' });
+    // Permissão: master ou owner
+    if (!req.headers.authorization) return res.status(401).json({ error: 'Token não fornecido' });
+    try {
+      const token = req.headers.authorization.slice(7);
+      const decoded = jwt.verify(token, JWT_SECRET);
+      const isOwner = empresa.owner && empresa.owner.toString() === decoded.id;
+      if (decoded.role !== 'master' && !isOwner) return res.status(403).json({ error: 'Permissão negada' });
+    } catch (err) {
+      return res.status(401).json({ error: 'Token inválido' });
+    }
 
     // Lógica de Status: Se conectado, retorna 204 (No Content)
     const idString = empresa._id.toString();
@@ -245,6 +361,17 @@ app.post('/api/reiniciar-bot/:id', async (req, res) => {
 
     const empresa = await Empresa.findById(id);
     if (!empresa) return res.status(404).json({ error: 'Empresa não encontrada.' });
+
+    // Permissão: master ou owner
+    if (!req.headers.authorization) return res.status(401).json({ error: 'Token não fornecido' });
+    try {
+      const token = req.headers.authorization.slice(7);
+      const decoded = jwt.verify(token, JWT_SECRET);
+      const isOwner = empresa.owner && empresa.owner.toString() === decoded.id;
+      if (decoded.role !== 'master' && !isOwner) return res.status(403).json({ error: 'Permissão negada' });
+    } catch (err) {
+      return res.status(401).json({ error: 'Token inválido' });
+    }
 
     await botManager.reiniciarBot(empresa);
 
@@ -279,7 +406,21 @@ app.get('/', (req, res) => {
     console.log('🔧 Aguardando conexão ao MongoDB antes de iniciar bots...');
     // Aguarda um pouco para garantir conexão MongoDB
     await new Promise(resolve => setTimeout(resolve, 2000));
-    
+    // Garantir que o usuário master (do .env) exista
+    try {
+      if (ADMIN_EMAIL && ADMIN_PASSWORD) {
+        let master = await User.findOne({ email: ADMIN_EMAIL.toLowerCase() });
+        if (!master) {
+          master = new User({ email: ADMIN_EMAIL.toLowerCase(), nome: 'Administrador', role: 'master' });
+          await master.setPassword(ADMIN_PASSWORD);
+          await master.save();
+          console.log('Usuário master criado a partir do .env');
+        }
+      }
+    } catch (errMaster) {
+      console.error('Erro ao garantir usuário master:', errMaster);
+    }
+
     const empresas = await Empresa.find();
     console.log(`📊 ${empresas.length} empresa(s) encontrada(s)`);
     
