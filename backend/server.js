@@ -134,12 +134,191 @@ app.get('/api/me', requireAuth, async (req, res) => {
 });
 
 
+// --- Endpoints de Login e Credenciais da Empresa ---
+
+// Criar ou atualizar credenciais da empresa (durante cadastro)
+app.post('/api/empresas/:id/credenciais', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { usuario, senha } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'ID inválido' });
+    }
+
+    if (!usuario || !senha) {
+      return res.status(400).json({ error: 'Usuário e senha são obrigatórios' });
+    }
+
+    const empresa = await Empresa.findById(id);
+    if (!empresa) {
+      return res.status(404).json({ error: 'Empresa não encontrada.' });
+    }
+
+    // Permissão: master ou owner
+    const isOwner = empresa.owner && empresa.owner.toString() === req.user.id;
+    if (req.user.role !== 'master' && !isOwner) {
+      return res.status(403).json({ error: 'Permissão negada' });
+    }
+
+    // Garantir que credenciais exista como objeto
+    if (!empresa.credenciais) {
+      empresa.credenciais = {};
+    }
+
+    // Atualizar usuário e senha
+    empresa.credenciais.usuario = usuario;
+    await empresa.definirSenha(senha);
+    await empresa.save();
+
+    console.log(`✅ Credenciais salvas para empresa ${empresa.nome}: usuário=${usuario}`);
+    res.json({ message: 'Credenciais atualizadas com sucesso', empresaId: empresa._id });
+  } catch (error) {
+    console.error('❌ Erro ao atualizar credenciais:', error);
+    res.status(500).json({ error: error.message || 'Erro ao atualizar credenciais.' });
+  }
+});
+
+// Criar credenciais sem autenticação (para cadastro inicial)
+app.post('/api/empresas-setup/:id/credenciais', async (req, res) => {
+  try {
+    console.log('📥 Requisição recebida em /api/empresas-setup/:id/credenciais');
+    const { id } = req.params;
+    const { usuario, senha } = req.body;
+
+    console.log(`🔐 Tentando criar credenciais para empresa: ${id}`);
+    console.log(`   Usuário recebido: ${usuario}`);
+    console.log(`   Senha length: ${senha ? senha.length : 0}`);
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      console.error('❌ ID inválido:', id);
+      return res.status(400).json({ error: 'ID inválido' });
+    }
+
+    if (!usuario || !senha) {
+      console.error('❌ Usuário ou senha não fornecidos');
+      return res.status(400).json({ error: 'Usuário e senha são obrigatórios' });
+    }
+
+    if (senha.length < 6) {
+      console.error('❌ Senha muito curta');
+      return res.status(400).json({ error: 'Senha deve ter pelo menos 6 caracteres' });
+    }
+
+    console.log('🔍 Buscando empresa no banco...');
+    const empresa = await Empresa.findById(id);
+    if (!empresa) {
+      console.error('❌ Empresa não encontrada:', id);
+      return res.status(404).json({ error: 'Empresa não encontrada.' });
+    }
+    console.log(`✅ Empresa encontrada: ${empresa.nome}`);
+
+    // Garantir que credenciais exista como objeto
+    if (!empresa.credenciais) {
+      empresa.credenciais = {};
+      console.log('📝 Inicializando objeto credenciais');
+    }
+
+    // Atualizar usuário e senha
+    empresa.credenciais.usuario = usuario;
+    console.log('🔐 Chamando definirSenha...');
+    await empresa.definirSenha(senha);
+    console.log('✅ definirSenha completado');
+    
+    console.log('💾 Salvando empresa com credenciais...');
+    await empresa.save();
+    console.log('✅ Empresa salva');
+
+    console.log(`✅ Credenciais criadas com sucesso para empresa ${empresa.nome}: usuário=${usuario}`);
+    res.json({ 
+      message: 'Credenciais criadas com sucesso',
+      empresa: { _id: empresa._id, nome: empresa.nome, credenciais: { usuario: empresa.credenciais.usuario } }
+    });
+  } catch (error) {
+    console.error('❌ Erro ao criar credenciais:', error.message);
+    console.error('Stack:', error.stack);
+    res.status(500).json({ error: error.message || 'Erro ao criar credenciais.' });
+  }
+});
+
+// Login da empresa (sem autenticação de master/owner)
+app.post('/api/empresas/login', async (req, res) => {
+  try {
+    const { usuario, senha, empresaId } = req.body;
+    console.log('🔐 Tentativa de login: usuario=' + usuario + ', empresaId=' + empresaId);
+
+    if (!usuario || !senha || !empresaId) {
+      console.error('❌ Dados incompletos fornecidos');
+      return res.status(400).json({ error: 'Usuário, senha e ID da empresa são obrigatórios' });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(empresaId)) {
+      console.error('❌ ID da empresa inválido:', empresaId);
+      return res.status(400).json({ error: 'ID da empresa inválido' });
+    }
+
+    console.log('📖 Buscando empresa no banco...');
+    const empresa = await Empresa.findById(empresaId);
+    if (!empresa) {
+      console.error('❌ Empresa não encontrada:', empresaId);
+      return res.status(404).json({ error: 'Empresa não encontrada.' });
+    }
+    console.log('✅ Empresa encontrada:', empresa.nome);
+
+    // Verificar credenciais
+    console.log('🔍 Verificando credenciais da empresa...');
+    if (!empresa.credenciais || !empresa.credenciais.usuario) {
+      console.error('❌ Credenciais não configuradas para esta empresa');
+      return res.status(400).json({ error: 'Esta empresa não possui credenciais configuradas' });
+    }
+
+    console.log('👤 Usuário no BD:', empresa.credenciais.usuario);
+    console.log('👤 Usuário fornecido:', usuario);
+    if (empresa.credenciais.usuario !== usuario) {
+      console.error('❌ Usuário incorreto');
+      return res.status(401).json({ error: 'Usuário ou senha inválidos' });
+    }
+    console.log('✅ Usuário correto');
+
+    console.log('🔐 Validando senha...');
+    const senhaValida = await empresa.validarSenha(senha);
+    if (!senhaValida) {
+      console.error('❌ Senha incorreta para usuário', usuario);
+      return res.status(401).json({ error: 'Usuário ou senha inválidos' });
+    }
+    console.log('✅ Senha válida!');
+
+    // Gerar token JWT para a empresa
+    const token = jwt.sign(
+      { 
+        id: empresa._id.toString(), 
+        tipo: 'empresa', 
+        usuario: empresa.credenciais.usuario,
+        nome: empresa.nome 
+      }, 
+      JWT_SECRET, 
+      { expiresIn: '8h' }
+    );
+
+    res.json({ 
+      token, 
+      empresaId: empresa._id.toString(), 
+      nome: empresa.nome,
+      usuario: empresa.credenciais.usuario 
+    });
+  } catch (error) {
+    console.error('❌ Erro ao fazer login da empresa:', error);
+    res.status(500).json({ error: 'Erro ao fazer login' });
+  }
+});
+
 // --- Rotas de Gerenciamento de Empresas (CRUD) ---
 
 app.post('/api/empresas', requireAuth, async (req, res) => {
     const { 
         nome, promptIA, telefone, ativo, 
-        msgBoasVindas, timeoutHumanoMinutos, msgFechado, horariosSemana
+        msgBoasVindas, timeoutHumanoMinutos, msgFechado, horariosSemana,
+        iaConfig  // Aceita configuração de IA (tipo, apiKey, modelo)
     } = req.body;
     
     try {
@@ -150,7 +329,8 @@ app.post('/api/empresas', requireAuth, async (req, res) => {
         const novaEmpresa = new Empresa({ 
           nome, promptIA, telefone, botAtivo: ativo,
           msgBoasVindas, timeoutHumanoMinutos, msgFechado, horariosSemana,
-          owner: ownerId
+          owner: ownerId,
+          iaConfig: iaConfig || { tipo: 'gemini', apiKey: null }  // Padrão Gemini se não informado
         });
       await novaEmpresa.save(); // Salva para ter o _id
 
@@ -217,7 +397,8 @@ app.put('/api/empresas/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { 
       nome, promptIA, telefone, botAtivo, 
-      msgBoasVindas, timeoutHumanoMinutos, msgFechado, horariosSemana 
+      msgBoasVindas, timeoutHumanoMinutos, msgFechado, horariosSemana,
+      iaConfig  // Permite atualizar configuração de IA
   } = req.body;
 
   try {
@@ -234,7 +415,8 @@ app.put('/api/empresas/:id', requireAuth, async (req, res) => {
       id,
       { 
           nome, promptIA, telefone, botAtivo, 
-          msgBoasVindas, timeoutHumanoMinutos, msgFechado, horariosSemana 
+          msgBoasVindas, timeoutHumanoMinutos, msgFechado, horariosSemana,
+          iaConfig: iaConfig || empresaAntiga.iaConfig  // Mantém config anterior se não informada
       },
       { new: true, runValidators: true }
     );
@@ -336,13 +518,8 @@ app.get('/api/qr/:id', async (req, res) => {
       return res.status(401).json({ error: 'Token inválido' });
     }
 
-    // Lógica de Status: Se conectado, retorna 204 (No Content)
-    const idString = empresa._id.toString();
-    if (statusBots[idString]?.conectado) {
-      return res.status(204).json(); 
-    }
-
     // ✅ CORREÇÃO: Usar o ID como chave (botManager.js usa o ID)
+    const idString = empresa._id.toString();
     const qr = botManager.getQRCode(idString); 
     
     if (qr) return res.json({ qrCode: qr });
@@ -351,6 +528,47 @@ app.get('/api/qr/:id', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Erro ao buscar QR code.' });
+  }
+});
+
+// Rota para GERAR/REGENERAR QR (força reinicialização)
+app.post('/api/qr-regenerar/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ error: 'ID inválido' });
+
+    const empresa = await Empresa.findById(id);
+    if (!empresa) return res.status(404).json({ error: 'Empresa não encontrada.' });
+
+    // Permissão: master ou owner
+    if (!req.headers.authorization) return res.status(401).json({ error: 'Token não fornecido' });
+    try {
+      const token = req.headers.authorization.slice(7);
+      const decoded = jwt.verify(token, JWT_SECRET);
+      const isOwner = empresa.owner && empresa.owner.toString() === decoded.id;
+      if (decoded.role !== 'master' && !isOwner) return res.status(403).json({ error: 'Permissão negada' });
+    } catch (err) {
+      return res.status(401).json({ error: 'Token inválido' });
+    }
+
+    // Reinicia o bot para gerar novo QR
+    await botManager.reiniciarBot(empresa);
+
+    // Aguarda mais tempo para garantir que o QR foi gerado completamente
+    await new Promise(resolve => setTimeout(resolve, 5000));
+
+    const idString = empresa._id.toString();
+    const qrCode = botManager.getQRCode(idString);
+    
+    if (qrCode) {
+      return res.json({ qrCode });
+    } else {
+      return res.status(500).json({ error: 'Erro ao gerar QR code. Tente novamente em alguns segundos.' });
+    }
+
+  } catch (error) {
+    console.error('Erro ao regenerar QR:', error);
+    res.status(500).json({ error: 'Erro ao regenerar QR code.' });
   }
 });
 
@@ -388,19 +606,66 @@ app.post('/api/reiniciar-bot/:id', async (req, res) => {
 
 // --- Rotas de Status/Health Check ---
 
+// Endpoint para enviar mensagem via API (bot envia mensagem para cliente)
+app.post('/api/empresas/:id/send-message', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { to, text } = req.body; // 'to' pode ser número ou jid
+
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ error: 'ID inválido' });
+    if (!to || !text) return res.status(400).json({ error: 'Parâmetros obrigatórios: to, text' });
+
+    const empresa = await Empresa.findById(id);
+    if (!empresa) return res.status(404).json({ error: 'Empresa não encontrada.' });
+
+    // Permissão: master ou owner
+    const isOwner = empresa.owner && empresa.owner.toString() === req.user.id;
+    if (req.user.role !== 'master' && !isOwner) return res.status(403).json({ error: 'Permissão negada' });
+
+    const empresaId = empresa._id.toString();
+    const sock = botManager.bots[empresaId];
+    if (!sock) return res.status(400).json({ error: 'Bot não conectado para esta empresa. Gere/escaneie o QR e aguarde conexão.' });
+
+    // Normaliza telefone para JID quando necessário
+    let jid = to;
+    if (!jid.includes('@')) {
+      // remove caracteres não-numéricos
+      const apenasNums = to.replace(/\D/g, '');
+      jid = `${apenasNums}@s.whatsapp.net`;
+    }
+
+    try {
+      await sock.sendMessage(jid, { text });
+      return res.json({ ok: true, message: 'Mensagem enviada' });
+    } catch (err) {
+      console.error('Erro ao enviar mensagem via bot:', err);
+      return res.status(500).json({ error: 'Erro ao enviar mensagem via bot', detail: err.message || err.toString() });
+    }
+
+  } catch (error) {
+    console.error('Erro no endpoint send-message:', error);
+    return res.status(500).json({ error: 'Erro interno ao enviar mensagem.' });
+  }
+});
+
+
 app.get('/api/bots/status', (req, res) => {
   res.json(statusBots);
 });
 
 app.get('/', (req, res) => {
-  res.send('🤖 API do NJBot está rodando!');
+  res.send('🤖 API do YouBot está rodando!');
 });
 
 
 // --- Inicialização do Servidor ---
 
-// Iniciar todos bots ao subir servidor
-// Iniciar todos bots ao subir servidor (com tratamento de erro)
+// Iniciar Express PRIMEIRO, depois iniciar bots em background
+app.listen(PORT, () => {
+  console.log(`🚀 Backend rodando em http://localhost:${PORT}`);
+});
+
+// Iniciar bots em background (não bloqueia o Express)
 (async () => {
   try {
     console.log('🔧 Aguardando conexão ao MongoDB antes de iniciar bots...');
@@ -424,6 +689,8 @@ app.get('/', (req, res) => {
     const empresas = await Empresa.find();
     console.log(`📊 ${empresas.length} empresa(s) encontrada(s)`);
     
+    // ⏸️  TEMPORARIAMENTE DESABILITADO PARA TESTE
+    /*
     for (const empresa of empresas) {
       try {
         console.log(`🚀 Tentando iniciar bot para: ${empresa.nome}`);
@@ -433,12 +700,124 @@ app.get('/', (req, res) => {
         // Continua com a próxima empresa ao invés de derrubar o servidor
       }
     }
+    */
+    console.log('✅ Inicialização de bots pulada (modo teste)');
+
+
+
+
+
+// Endpoint para editar o prompt da IA
+app.put('/api/empresas/:id/prompt', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { promptIA } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'ID inválido' });
+    }
+
+    if (!promptIA || promptIA.trim() === '') {
+      return res.status(400).json({ error: 'Prompt não pode ser vazio' });
+    }
+
+    const empresa = await Empresa.findById(id);
+    if (!empresa) {
+      return res.status(404).json({ error: 'Empresa não encontrada.' });
+    }
+
+    // Permissão: master ou owner
+    const isOwner = empresa.owner && empresa.owner.toString() === req.user.id;
+    if (req.user.role !== 'master' && !isOwner) {
+      return res.status(403).json({ error: 'Permissão negada' });
+    }
+
+    // Atualiza o prompt
+    empresa.promptIA = promptIA;
+    await empresa.save();
+
+    // Atualiza o arquivo de prompt também
+    const pasta = path.join(__dirname, 'bots', id);
+    if (!fs.existsSync(pasta)) fs.mkdirSync(pasta, { recursive: true });
+    fs.writeFileSync(path.join(pasta, 'prompt.txt'), promptIA);
+
+    res.json({ 
+      message: 'Prompt atualizado com sucesso',
+      promptIA: empresa.promptIA
+    });
+  } catch (error) {
+    console.error('❌ Erro ao atualizar prompt:', error);
+    res.status(500).json({ error: 'Erro ao atualizar prompt.' });
+  }
+});
+
+app.post('/api/empresas/:id/configurar-ia', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { tipo, apiKey, modelo } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'ID inválido' });
+    }
+
+    const empresa = await Empresa.findById(id);
+    if (!empresa) {
+      return res.status(404).json({ error: 'Empresa não encontrada.' });
+    }
+
+    // Permissão: master ou owner
+    const isOwner = empresa.owner && empresa.owner.toString() === req.user.id;
+    if (req.user.role !== 'master' && !isOwner) {
+      return res.status(403).json({ error: 'Permissão negada' });
+    }
+
+    // Valida provider
+    const provedoresValidos = ['gemini', 'gpt', 'claude', 'publicai'];
+    if (tipo && !provedoresValidos.includes(tipo)) {
+      return res.status(400).json({ error: `Provider inválido. Use: ${provedoresValidos.join(', ')}` });
+    }
+
+    // Atualiza a configuração de IA
+    empresa.iaConfig = {
+      tipo: tipo || empresa.iaConfig?.tipo || 'gemini',
+      apiKey: apiKey || empresa.iaConfig?.apiKey,
+      modelo: modelo || empresa.iaConfig?.modelo || 'claude-3-5-haiku-20241022'
+    };
+
+    await empresa.save();
+
+    res.json({ 
+      message: 'Configuração de IA atualizada com sucesso',
+      empresa 
+    });
+  } catch (error) {
+    console.error('❌ Erro ao configurar IA:', error);
+    res.status(500).json({ error: 'Erro ao configurar IA.' });
+  }
+});
+
+// Endpoint de teste: enviar mensagem para testar IA
+app.post('/api/test-message', async (req, res) => {
+  try {
+    const { empresaId, mensagem } = req.body;
+
+    if (!empresaId || !mensagem) {
+      return res.status(400).json({ error: 'empresaId e mensagem são obrigatórios' });
+    }
+
+    const handleMensagem = require('./handlers/chatbot');
+    const resposta = await handleMensagem(empresaId, mensagem);
+
+    res.json({ resposta: resposta.resposta });
+  } catch (error) {
+    console.error('❌ Erro ao processar mensagem:', error);
+    res.status(500).json({ error: 'Erro ao processar mensagem.' });
+  }
+});
+
     console.log('✅ Inicialização de bots completada');
   } catch (err) {
     console.error('❌ Erro durante inicialização de bots:', err);
     console.log('⚠️ Servidor continuando sem inicializar bots');
   }
 })();
-  app.listen(PORT, () => {
-  console.log(`🚀 Backend rodando em http://localhost:${PORT}`);
-});

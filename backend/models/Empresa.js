@@ -1,5 +1,6 @@
 ﻿const mongoose = require('mongoose');
 const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 
 const EmpresaSchema = new mongoose.Schema({
   nome: { type: String, required: true, unique: true },
@@ -8,7 +9,7 @@ const EmpresaSchema = new mongoose.Schema({
   iaConfig: {
     tipo: { type: String, enum: ['gemini','gpt','claude','publicai'], default: 'gemini' },
     apiKey: { type: String, required: false },
-    modelo: { type: String, default: 'claude-3-5-haiku-20241022' } // Claude Haiku 4.5 por padrão
+    modelo: { type: String, default: 'claude-3-5-haiku-20241022' }
   },
   promptIA: { type: String, required: true },
   owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
@@ -33,6 +34,12 @@ const EmpresaSchema = new mongoose.Schema({
       '6': { inicio: '00:00', fim: '00:00', ativo: false, intervaloInicio: '00:00', intervaloFim: '00:00' },
       '0': { inicio: '00:00', fim: '00:00', ativo: false, intervaloInicio: '00:00', intervaloFim: '00:00' }
     }
+  },
+  // Credenciais da empresa para acesso ao painel
+  credenciais: {
+    usuario: { type: String, unique: true, sparse: true },
+    senhaHash: { type: String },
+    criadoEm: { type: Date, default: Date.now }
   }
 }, { timestamps: true });
 
@@ -89,5 +96,28 @@ EmpresaSchema.methods.getDecryptedApiKey = function() {
 };
 
 EmpresaSchema.statics.encryptApiKey = function(apiKey) { return encryptApiKey(apiKey); };
+
+// Método para definir senha
+EmpresaSchema.methods.definirSenha = async function(senha) {
+  if (!senha || senha.trim().length < 6) {
+    throw new Error('Senha deve ter pelo menos 6 caracteres');
+  }
+  console.log('🔐 Iniciando hash da senha com bcrypt...');
+  this.credenciais.senhaHash = await bcrypt.hash(senha, 10);
+  console.log('✅ Senha hasheada com sucesso');
+};
+
+// Método para validar senha
+EmpresaSchema.methods.validarSenha = async function(senha) {
+  console.log('🔍 Validando senha...');
+  if (!this.credenciais.senhaHash) {
+    console.error('❌ Nenhum hash de senha encontrado');
+    return false;
+  }
+  console.log('📝 Hash armazenado:', this.credenciais.senhaHash.substring(0, 20) + '...');
+  const resultado = await bcrypt.compare(senha, this.credenciais.senhaHash);
+  console.log('✅ Comparação completada:', resultado);
+  return resultado;
+};
 
 module.exports = mongoose.model('Empresa', EmpresaSchema);

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function LoginFixed() {
-  const [email, setEmail] = useState('jeansd@njbot.com');
+  const [email, setEmail] = useState('jeansd@youbot.com');
   const [senha, setSenha] = useState('191427Mmaj@Lock203001');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -22,7 +22,7 @@ export default function LoginFixed() {
 
   return (
     <div style={{ padding: '20px', maxWidth: '400px', margin: '100px auto' }}>
-      <h1>NJBot - Login</h1>
+      <h1>YouBot - Login</h1>
       <form onSubmit={handleLogin}>
         <div style={{ marginBottom: '15px' }}>
           <label>Email:</label>

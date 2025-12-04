@@ -28,7 +28,7 @@ export default function Dashboard() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5', padding: '20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <h1>NJBot - Painel de Empresas</h1>
+        <h1>YouBot - Painel de Empresas</h1>
         <button onClick={handleLogout} style={{ padding: '10px 20px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
           Sair
         </button>

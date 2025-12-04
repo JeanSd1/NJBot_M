@@ -12,6 +12,18 @@ const atendimentosManuais = {};
 const qrCodesGerados = {};
 const statusBots = {};
 const instanciasAtivas = new Map();
+// Map para evitar processamento duplicado de mensagens (chave -> timestamp)
+const mensagensRecentes = new Map();
+
+// Limpeza periódica de mensagens antigas para evitar crescimento infinito
+setInterval(() => {
+  const agora = Date.now();
+  for (const [chave, ts] of mensagensRecentes.entries()) {
+    if (agora - ts > 1000 * 60 * 5) { // 5 minutos
+      mensagensRecentes.delete(chave);
+    }
+  }
+}, 1000 * 60);
 
 function estaEmHorarioComercial(empresa) {
   try {
@@ -142,8 +154,36 @@ async function iniciarBot(empresa) {
             if (!msg || !msg.message) continue;
             
             const sender = msg.key.remoteJid;
+            const msgId = msg.key.id || (msg.message && msg.message.conversation && msg.message.conversation.slice(0,20)) || '';
+            const dedupeKey = `${empresaId}_${sender}_${msgId}`;
+
+            // Ignora mensagens duplicadas recebidas recentemente
+            if (mensagensRecentes.has(dedupeKey)) {
+              console.log('🟡 Mensagem duplicada ignorada:', dedupeKey);
+              continue;
+            }
+            mensagensRecentes.set(dedupeKey, Date.now());
             let texto = msg.message?.conversation || '';
             const textoLower = texto.toLowerCase().trim();
+            
+                        // Ignora mensagens do próprio bot
+                        if (msg.key.fromMe) {
+                          console.log('📤 [Bot] Própria mensagem ignorada');
+                          continue;
+                        }
+            
+                        // Extrai texto de diferentes tipos
+                        texto = msg.message?.conversation || 
+                               msg.message?.extendedTextMessage?.text || 
+                               msg.message?.imageMessage?.caption || 
+                               '';
+            
+                        if (!texto || !texto.trim()) {
+                          console.log('📝 [Vazio] Sem conteúdo');
+                          continue;
+                        }
+            
+                        console.log(`📨 [${empresa.nome}] Recebida de ${sender}: "${texto.substring(0, 40)}..."`);
             
             const empresaAtualizada = await empresaDB.findById(empresa._id);
             if (!empresaAtualizada?.botAtivo) continue;
@@ -154,10 +194,12 @@ async function iniciarBot(empresa) {
                 ativo: false,
                 ultimoContato: null,
                 iniciado: false,
-                nomeEmpresa: empresaAtualizada.nome
+                nomeEmpresa: empresaAtualizada.nome,
+                processamento: false,
+                ultimoErroEnviado: 0
               };
             }
-            
+
             const atendimento = atendimentosManuais[chaveAtendimento];
             
             if (!estaEmHorarioComercial(empresaAtualizada)) {
@@ -176,15 +218,39 @@ async function iniciarBot(empresa) {
             }
             
             if (atendimento.ativo) continue;
+
+            // Evita processamento concorrente para o mesmo atendimento
+            if (atendimento.processamento) {
+              console.log('⏳ Atendimento já em processamento para', chaveAtendimento);
+              continue;
+            }
+            atendimento.processamento = true;
             
             try {
               const resultado = await handleMensagem(empresaAtualizada._id.toString(), texto);
               const respostaTexto = resultado?.resposta || (typeof resultado === 'string' ? resultado : null);
               if (respostaTexto) {
+                console.log(`✅ Respondendo: "${respostaTexto.substring(0, 40)}..."`);
                 await sock.sendMessage(sender, { text: respostaTexto });
+              } else {
+                console.warn('⚠️ Resposta vazia da IA');
               }
             } catch (err) {
-              console.error('Erro ao gerar resposta:', err);
+              console.error('❌ Erro IA:', err && err.message ? err.message : err);
+              // Enviar apenas UMA mensagem de erro por atendimento a cada X segundos
+              const agora = Date.now();
+              if (!atendimento.ultimoErroEnviado || (agora - atendimento.ultimoErroEnviado) > (60 * 1000)) {
+                atendimento.ultimoErroEnviado = agora;
+                try {
+                  await sock.sendMessage(sender, { text: '⚠️ Desculpe, ocorreu um erro ao gerar a resposta com a IA. Um atendente humano já foi notificado. #humano' });
+                } catch (sendErr) {
+                  console.error('Erro ao enviar mensagem de falha ao usuário:', sendErr);
+                }
+              } else {
+                console.log('🔕 Ignorando envio de mensagem de erro repetida para', chaveAtendimento);
+              }
+            } finally {
+              atendimento.processamento = false;
             }
           } catch (msgErr) {
             console.error('Erro processando mensagem:', msgErr);

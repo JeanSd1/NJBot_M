@@ -1,4 +1,4 @@
-# Guia de Setup - NJBot Backend
+# Guia de Setup - YouBot Backend
 
 ## ✅ ERROS CORRIGIDOS (Nov 09, 2025)
 

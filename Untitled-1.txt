@@ -1,0 +1,9 @@
+cd c:\Users\Lugan\njbot\NJBot_M\backend
+npm start
+
+
+
+
+
+cd c:\Users\Lugan\njbot\NJBot_M\frontend\painel-empresas
+npm run dev

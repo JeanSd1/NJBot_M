@@ -1,5 +1,5 @@
 /**
- * AIService.js - Multi-provider AI service for NJBot
+ * AIService.js - Multi-provider AI service for YouBot
  * Handles routing to different AI providers (Gemini, OpenAI, OpenRouter, Claude, PublicAI)
  * Uses client-specific API keys for improved security and per-client configuration
  */
@@ -17,27 +17,36 @@ class AIService {
    */
   static async generateResponse(provider, apiKey, prompt, clientMessage) {
     if (!provider || !apiKey) {
+      console.error('❌ Provider ou API key ausente:', { provider, apiKey: apiKey ? '***' : 'undefined' });
       throw new Error('Provider and API key are required');
     }
 
+    const providerLower = provider.toLowerCase();
+    console.log(`[AIService] Processando com provider: ${providerLower}`);
+
     try {
-      switch (provider.toLowerCase()) {
+      switch (providerLower) {
         case 'gemini':
+          console.log('[AIService] Chamando Gemini...');
           return await this.callGemini(apiKey, prompt, clientMessage);
         case 'gpt':
         case 'openai':
+          console.log('[AIService] Chamando OpenAI...');
           return await this.callOpenAI(apiKey, prompt, clientMessage);
         case 'claude':
+          console.log('[AIService] Chamando Claude...');
           return await this.callClaude(apiKey, prompt, clientMessage);
         case 'openrouter':
+          console.log('[AIService] Chamando OpenRouter...');
           return await this.callOpenRouter(apiKey, prompt, clientMessage);
         case 'publicai':
+          console.log('[AIService] Chamando PublicAI...');
           return await this.callPublicAI(prompt, clientMessage);
         default:
           throw new Error(`Unsupported AI provider: ${provider}`);
       }
     } catch (error) {
-      console.error(`Error calling ${provider} AI:`, error.message);
+      console.error(`❌ Error calling ${providerLower} AI:`, error.message);
       throw error;
     }
   }
@@ -46,25 +55,26 @@ class AIService {
    * Call Google Gemini API
    */
   static async callGemini(apiKey, prompt, clientMessage) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
-    
-    const payload = {
-      contents: [
-        {
-          parts: [
-            {
-              text: `${prompt}\n\nClient message: ${clientMessage}`
-            }
-          ]
-        }
-      ]
-    };
-
     try {
-      const response = await axios.post(url, payload);
-      return response.data.candidates[0].content.parts[0].text;
+      const { GoogleGenerativeAI } = require('@google/generative-ai');
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+      const fullPrompt = `${prompt}\n\nUsuário: ${clientMessage}`;
+      console.log(`[Gemini] Enviando prompt de ${fullPrompt.length} caracteres`);
+      
+      const result = await model.generateContent(fullPrompt);
+      const response = await result.response;
+      const text = response.text();
+      
+      if (!text) {
+        throw new Error('Gemini retornou texto vazio');
+      }
+      
+      console.log(`[Gemini] ✅ Resposta recebida: ${text.substring(0, 50)}...`);
+      return text;
     } catch (error) {
-      console.error('Gemini API error:', error.response?.data || error.message);
+      console.error('❌ Gemini API error:', error.message);
       throw error;
     }
   }
@@ -147,7 +157,7 @@ class AIService {
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'HTTP-Referer': process.env.APP_URL || 'https://njbot.com',
-          'X-Title': 'NJBot'
+          'X-Title': 'YouBot'
         }
       });
       return response.data.choices[0].message.content;

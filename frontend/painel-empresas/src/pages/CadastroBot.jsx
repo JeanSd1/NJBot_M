@@ -10,6 +10,8 @@ export default function CadastroBot() {
   const [iaType, setIaType] = useState('gemini');
   const [apiKey, setApiKey] = useState('');
   const [claudeModel, setClaudeModel] = useState('claude-3-5-haiku-20241022');
+  const [usuario, setUsuario] = useState('');
+  const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -30,6 +32,24 @@ export default function CadastroBot() {
       };
 
       const res = await api.post('/empresas', payload);
+      const empresaId = res.data.empresa._id;
+      console.log('✅ Empresa criada:', empresaId);
+
+      // Adicionar credenciais da empresa (novo endpoint sem autenticação)
+      if (usuario && senha) {
+        console.log('🔐 Criando credenciais para empresa...');
+        try {
+          const credRes = await api.post(`/empresas-setup/${empresaId}/credenciais`, {
+            usuario,
+            senha
+          });
+          console.log('✅ Credenciais criadas:', credRes.data);
+        } catch (credErr) {
+          console.error('❌ Erro ao criar credenciais:', credErr);
+          alert('Aviso: Empresa criada mas credenciais falharam. Verifique os logs do servidor.');
+        }
+      }
+
       alert('Empresa cadastrada com sucesso!');
       navigate('/empresas');
     } catch (err) {
@@ -44,7 +64,7 @@ export default function CadastroBot() {
   return (
     <div className="cadastro-container">
       <div className="cadastro-box">
-        <h1>NJBot</h1>
+        <h1>YouBot</h1>
         <h2>Cadastrar Empresa:</h2>
         
         <form onSubmit={handleCadastro}>
@@ -71,6 +91,24 @@ export default function CadastroBot() {
             rows="5"
             required
           ></textarea>
+
+          <h3>Credenciais da Empresa (para acesso ao painel)</h3>
+          <input
+            type="text"
+            placeholder="Usuário da empresa"
+            value={usuario}
+            onChange={(e) => setUsuario(e.target.value)}
+            required
+          />
+          
+          <input
+            type="password"
+            placeholder="Senha da empresa (mínimo 6 caracteres)"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+            required
+            minLength="6"
+          />
           
           <h3>Configuração da IA</h3>
           <div className="ia-options">

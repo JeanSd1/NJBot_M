@@ -4,7 +4,7 @@ import './Login.css';
 import api from '../services/api';
 
 export default function Login() {
-  const [email, setEmail] = useState('admin@njbot.com');
+  const [email, setEmail] = useState('admin@youbot.com');
   const [password, setPassword] = useState('senha');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -34,9 +34,9 @@ export default function Login() {
     <div className="login-container">
       <div className="login-left">
         <div className="login-box">
-          <h1>NJBOT</h1>
+          <h1>YouBot</h1>
           <h2>Faça seu login.</h2>
-          <p>Acesse o painel de controle do NJBot</p>
+          <p>Acesse o painel de controle do YouBot</p>
 
           <form onSubmit={handleLogin}>
             <input
@@ -61,7 +61,7 @@ export default function Login() {
       </div>
 
       <div className="login-right">
-        <div className="neon-text">NJBOT</div>
+        <div className="neon-text">YouBot</div>
       </div>
     </div>
   );
