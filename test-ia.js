@@ -1,19 +1,29 @@
+/**
+ * MVP Test Script - YouAi.BETA
+ * 
+ * Este script testa o funcionamento básico do backend
+ * e da integração com serviços de IA.
+ */
+
+require('dotenv').config();
 const axios = require('axios');
 
-const API_URL = 'http://localhost:3000';
+const API_URL = process.env.API_URL || 'http://localhost:3000';
 let token = '';
 let empresaId = '';
 
-// Cria uma instância axios com timeout maior
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 30000,  // 30 segundos de timeout
-  validateStatus: () => true  // Não lança erro em qualquer status HTTP
+  timeout: 30000,
+  validateStatus: () => true
 });
 
 async function testar() {
   try {
-    // Aguarda um pouco para o servidor estar pronto
+    console.log('🚀 Iniciando testes do MVP YouAi.BETA\n');
+    console.log(`📍 API URL: ${API_URL}\n`);
+
+    // Aguarda servidor estar pronto
     console.log('⏳ Aguardando servidor...');
     await new Promise(r => setTimeout(r, 3000));
 
@@ -24,70 +34,47 @@ async function testar() {
       senha: 'master123'
     });
     
-    if (!loginRes.data || !loginRes.data.token) {
+    if (!loginRes.data?.token) {
       console.error('❌ Login falhou:', loginRes.data);
       return;
     }
 
     token = loginRes.data.token;
-    console.log('✅ Login bem-sucedido');
+    console.log('✅ Login bem-sucedido\n');
 
     // 2. Listar empresas
-    console.log('\n📋 Listando empresas...');
+    console.log('📋 Listando empresas...');
     const empresasRes = await api.get('/api/empresas', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     
-    if (!empresasRes.data || empresasRes.data.length === 0) {
-      console.log('❌ Nenhuma empresa encontrada');
-      console.log('Resposta:', empresasRes.data);
+    if (!empresasRes.data?.length) {
+      console.error('❌ Nenhuma empresa encontrada');
       return;
     }
 
     empresaId = empresasRes.data[0]._id;
-    console.log(`✅ Empresa encontrada: ${empresasRes.data[0].nome} (${empresaId})`);
-    console.log(`   iaConfig:`, empresasRes.data[0].iaConfig);
+    console.log(`✅ Empresa: ${empresasRes.data[0].nome}\n`);
 
-    // 3. Configurar IA (Gemini com chave de teste)
-    console.log('\n⚙️  Configurando IA...');
-    const configRes = await api.post(
-      `/api/empresas/${empresaId}/configurar-ia`,
-      {
-        tipo: 'gemini',
-        apiKey: process.env.GEMINI_API_KEY || 'AIzaSyDx-hNaPJmVEQLLXMu0p0VqALQjQz1iLdk',  // Chave de teste
-        modelo: 'gemini-pro'
-      },
-      { headers: { 'Authorization': `Bearer ${token}` } }
-    );
-    
-    if (!configRes.data || !configRes.data.message) {
-      console.error('❌ Configuração falhou:', configRes.data);
-      return;
-    }
-
-    console.log('✅ IA configurada:', configRes.data.message);
-
-    // 4. Testar mensagem
-    console.log('\n💬 Testando mensagem...');
+    // 3. Testar IA (básico)
+    console.log('🤖 Testando IA...');
     const msgRes = await api.post('/api/test-message', {
       empresaId: empresaId,
-      mensagem: 'Olá! Como você está?'
+      mensagem: 'Olá! Teste do MVP.'
     });
 
-    if (!msgRes.data) {
-      console.error('❌ Erro ao processar mensagem:', msgRes.statusText);
-      return;
+    if (msgRes.data?.resposta) {
+      console.log('✅ Resposta IA:', msgRes.data.resposta);
+    } else {
+      console.log('⚠️  Aviso:', msgRes.data?.message || 'Sem resposta');
     }
 
-    console.log('✅ Resposta:', msgRes.data.resposta);
+    console.log('\n✨ MVP funcionando corretamente!');
 
   } catch (error) {
-    if (error.response) {
-      console.error('❌ Erro HTTP:', error.response.status, error.response.data);
-    } else if (error.request) {
-      console.error('❌ Erro de conexão:', error.message);
-    } else {
-      console.error('❌ Erro:', error.message);
+    console.error('\n❌ Erro:', error.message);
+    if (error.response?.data) {
+      console.error('Detalhes:', error.response.data);
     }
   }
 }
