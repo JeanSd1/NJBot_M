@@ -65,52 +65,7 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Registro público (qualquer pessoa pode criar conta)
-app.post('/api/registro', async (req, res) => {
-  try {
-    const { nome, email, senha, role } = req.body;
-    
-    // Validacoes
-    if (!email || !senha || !nome) {
-      return res.status(400).json({ error: 'Nome, email e senha sao obrigatorios' });
-    }
-
-    if (senha.length < 6) {
-      return res.status(400).json({ error: 'Senha deve ter no minimo 6 caracteres' });
-    }
-
-    // Verificar se usuario ja existe
-    const exists = await User.findOne({ email: email.toLowerCase() });
-    if (exists) {
-      return res.status(400).json({ error: 'Este email ja esta registrado' });
-    }
-
-    // Criar novo usuario
-    const user = new User({
-      nome: nome.trim(),
-      email: email.toLowerCase(),
-      role: 'client' // Sempre criar como client
-    });
-
-    await user.setPassword(senha);
-    await user.save();
-
-    console.log(`✅ Novo usuario registrado: ${user.email}`);
-
-    res.status(201).json({
-      message: 'Conta criada com sucesso! Faca login agora.',
-      user: {
-        id: user._id,
-        email: user.email,
-        nome: user.nome,
-        role: user.role
-      }
-    });
-  } catch (err) {
-    console.error('Erro ao registrar usuario:', err);
-    res.status(500).json({ error: 'Erro ao criar conta' });
-  }
-});
+// Criar usuário (master-only)
 app.post('/api/users', requireAuth, requireRole('master'), async (req, res) => {
   try {
     const { nome, email, senha, role } = req.body;
