@@ -47,11 +47,12 @@ app.post('/api/login', async (req, res) => {
       return res.json({ token, nome: user.nome || user.email, email: user.email, role: user.role });
     }
 
-    // 2. Tentar login como cliente usando credenciais da empresa
-    const empresa = await Empresa.findOne({ 'credenciais.email': email?.toLowerCase() });
-    if (empresa) {
-      const credencial = empresa.credenciais.find(c => c.email === email?.toLowerCase());
-      if (credencial && credencial.senha === senha) {
+    // 2. Tentar login como cliente usando credenciais da empresa (novo modelo)
+    const empresa = await Empresa.findOne({ 'credenciais.usuario': email?.toLowerCase() });
+    if (empresa && empresa.credenciais && empresa.credenciais.usuario === email?.toLowerCase()) {
+      const bcrypt = require('bcrypt');
+      const senhaHash = empresa.credenciais.senhaHash;
+      if (senhaHash && await bcrypt.compare(senha, senhaHash)) {
         // Cliente encontrado - retornar token com acesso à empresa
         const token = jwt.sign({ 
           empresaId: empresa._id.toString(), 
@@ -387,21 +388,25 @@ app.get('/api/empresas', requireAuth, async (req, res) => {
 // Rota para buscar uma única empresa por ID
 app.get('/api/empresas/:id', requireAuth, async (req, res) => {
     const { id } = req.params;
-    
     try {
       if (!mongoose.Types.ObjectId.isValid(id)) {
         return res.status(400).json({ error: 'ID inválido.' });
       }
-  
       const empresa = await Empresa.findById(id);
-      
+      // Log só após garantir que empresa existe
+      if (empresa) {
+        console.log('DEBUG empresaId:', empresa._id.toString(), '| req.user:', req.user);
+      }
       if (!empresa) {
         return res.status(404).json({ error: 'Empresa não encontrada.' });
       }
 
-      // Permissão: master ou owner
+      // Permissão: master, owner ou client da própria empresa
       const isOwner = empresa.owner && empresa.owner.toString() === req.user.id;
-      if (req.user.role !== 'master' && !isOwner) return res.status(403).json({ error: 'Permissão negada' });
+      const isClient = req.user.role === 'client' && req.user.empresaId === empresa._id.toString();
+      if (req.user.role !== 'master' && !isOwner && !isClient) {
+        return res.status(403).json({ error: 'Permissão negada' });
+      }
 
       return res.json(empresa);
     } catch (error) {
@@ -788,20 +793,26 @@ app.put('/api/empresas/:id/credenciais', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Empresa não encontrada' });
     }
 
-    // Atualiza email (sempre atualiza)
-    if (!empresa.credenciais) empresa.credenciais = [];
-    if (empresa.credenciais.length === 0) {
-      empresa.credenciais.push({ email: email.toLowerCase(), senha: senha || 'default123' });
-    } else {
-      empresa.credenciais[0].email = email.toLowerCase();
-      if (senha) empresa.credenciais[0].senha = senha;
+    // Atualiza credenciais como objeto
+    try {
+      if (!empresa.credenciais || typeof empresa.credenciais !== 'object' || Array.isArray(empresa.credenciais)) {
+        empresa.credenciais = {};
+      }
+      empresa.credenciais.usuario = email.toLowerCase();
+      if (senha) {
+        const bcrypt = require('bcrypt');
+        const hash = await bcrypt.hash(senha, 10);
+        empresa.credenciais.senhaHash = hash;
+      }
+      await empresa.save();
+    } catch (errInterno) {
+      console.error('❌ Erro interno ao salvar credenciais:', errInterno);
+      return res.status(500).json({ error: 'Erro interno ao salvar credenciais.', details: errInterno.message });
     }
-
-    await empresa.save();
 
     res.json({ 
       message: 'Credenciais do cliente atualizadas com sucesso',
-      credenciais: { email: empresa.credenciais[0].email }
+      credenciais: { usuario: empresa.credenciais.usuario }
     });
   } catch (error) {
     console.error('❌ Erro ao atualizar credenciais:', error);

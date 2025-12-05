@@ -12,6 +12,9 @@ async function requireAuth(req, res, next) {
     const decoded = jwt.verify(token, JWT_SECRET);
     // Attach minimal user info
     req.user = { id: decoded.id, email: decoded.email, role: decoded.role };
+    // Add empresaId and empresaNome for client users
+    if (decoded.empresaId) req.user.empresaId = decoded.empresaId;
+    if (decoded.empresaNome) req.user.empresaNome = decoded.empresaNome;
     next();
   } catch (err) {
     return res.status(401).json({ error: 'Token inválido' });

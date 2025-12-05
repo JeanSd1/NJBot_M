@@ -4,6 +4,13 @@ import './ListaEmpresas.css';
 import api from '../services/api';
 
 export default function ListaEmpresas() {
+    // Redireciona cliente para o painel correto
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user.role === 'client' && user.empresaId) {
+      // Usa navigate já declarado
+      setTimeout(() => navigate(`/empresa/${user.empresaId}`), 0);
+      return null;
+    }
   const [empresas, setEmpresas] = useState([]);
   const [busca, setBusca] = useState('');
   const [empresaSelecionada, setEmpresaSelecionada] = useState(null);
@@ -14,6 +21,10 @@ export default function ListaEmpresas() {
   const [sendTo, setSendTo] = useState('');
   const [sendText, setSendText] = useState('');
   const [sending, setSending] = useState(false);
+  const [editandoCredenciais, setEditandoCredenciais] = useState(false);
+  const [credencialEmail, setCredencialEmail] = useState('');
+  const [credencialSenha, setCredencialSenha] = useState('');
+  const [credencialSenhaConfirm, setCredencialSenhaConfirm] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -39,7 +50,18 @@ export default function ListaEmpresas() {
   const handleSelecionarEmpresa = async (empresa) => {
     setEmpresaSelecionada(empresa);
     setEditandoIA(false);
+    setEditandoCredenciais(false);
     setIaConfig(empresa.iaConfig || { tipo: 'gemini', apiKey: '', modelo: 'claude-3-5-haiku-20241022' });
+    
+    // Carregar credenciais da empresa
+    if (empresa.credenciais && empresa.credenciais.length > 0) {
+      setCredencialEmail(empresa.credenciais[0].email || '');
+    } else {
+      // Gera um email padrão se não existir
+      setCredencialEmail(`cliente@${empresa.nome?.toLowerCase().replace(/\s+/g, '')}.com` || 'cliente@empresa.com');
+    }
+    setCredencialSenha('');
+    setCredencialSenhaConfirm('');
     
     // Carregar QR
     try {
@@ -109,6 +131,38 @@ export default function ListaEmpresas() {
       }
     } catch (err) {
       alert('Erro ao gerar QR: ' + (err?.response?.data?.error || err.message));
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  const handleSalvarCredenciais = async (e) => {
+    e.preventDefault();
+    if (!credencialEmail || !credencialEmail.includes('@')) {
+      alert('Email inválido');
+      return;
+    }
+    if (credencialSenha && credencialSenha.length < 6) {
+      alert('Senha deve ter mínimo 6 caracteres');
+      return;
+    }
+    if (credencialSenha && credencialSenha !== credencialSenhaConfirm) {
+      alert('Senhas não coincidem');
+      return;
+    }
+
+    try {
+      setCarregando(true);
+      await api.put(`/empresas/${empresaSelecionada._id}/credenciais`, {
+        email: credencialEmail,
+        senha: credencialSenha || undefined
+      });
+      alert('Credenciais atualizadas com sucesso!');
+      setEditandoCredenciais(false);
+      setCredencialSenha('');
+      setCredencialSenhaConfirm('');
+    } catch (err) {
+      alert('Erro ao salvar credenciais: ' + (err?.response?.data?.error || err.message));
     } finally {
       setCarregando(false);
     }
@@ -348,6 +402,104 @@ export default function ListaEmpresas() {
                       <span className="api-key-masked">
                         {empresaSelecionada.iaConfig?.apiKey ? '●●●●●●' : 'não configurada'}
                       </span>
+                    </div>
+                  </div>
+                )}
+              </section>
+
+              {/* SEÇÃO CREDENCIAIS DO CLIENTE */}
+              <section className="secao-credenciais">
+                <div className="secao-header">
+                  <h3>Credenciais do Cliente</h3>
+                  {!editandoCredenciais && (
+                    <button
+                      onClick={() => {
+                        setEditandoCredenciais(true);
+                        setCredencialSenha('');
+                        setCredencialSenhaConfirm('');
+                      }}
+                      className="btn-editar"
+                    >
+                      Editar
+                    </button>
+                  )}
+                </div>
+
+                {editandoCredenciais ? (
+                  <form onSubmit={handleSalvarCredenciais} className="form-credenciais">
+                    <div className="form-group">
+                      <label>Email do Cliente</label>
+                      <div style={{display: 'flex', gap: '8px'}}>
+                        <input
+                          type="email"
+                          value={credencialEmail.slice(0, 60)}
+                          maxLength={60}
+                          onChange={(e) => {
+                            setCredencialEmail(e.target.value.slice(0, 60));
+                          }}
+                          placeholder="email@cliente.com"
+                          required
+                          style={{flex: 1, background: '#fff', color: '#222', pointerEvents: 'auto'}}
+                        />
+                        <button type="button" style={{padding: '6px 12px'}} onClick={() => setCredencialEmail('')}>Limpar</button>
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <label>Nova Senha (deixe vazio para manter)</label>
+                      <input
+                        type="password"
+                        value={credencialSenha}
+                        onChange={(e) => {
+                          setCredencialSenha(e.target.value);
+                        }}
+                        placeholder="Mínimo 6 caracteres"
+                        autoComplete="off"
+                        style={{background: '#fff', color: '#222', pointerEvents: 'auto'}}
+                      />
+                    </div>
+
+                    {credencialSenha && credencialSenha.trim().length > 0 && (
+                      <>
+                        <p style={{color: 'green', fontSize: '12px', margin: '5px 0'}}>✓ Senha preenchida</p>
+                        <div className="form-group">
+                          <label>Confirmar Senha</label>
+                          <input
+                            type="password"
+                            value={credencialSenhaConfirm}
+                            onChange={(e) => {
+                              setCredencialSenhaConfirm(e.target.value);
+                            }}
+                            placeholder="Confirme a senha"
+                            autoComplete="off"
+                            style={{background: '#fff', color: '#222', pointerEvents: 'auto'}}
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    <div className="form-actions">
+                      <button
+                        type="submit"
+                        className="btn-salvar"
+                        disabled={carregando}
+                      >
+                        {carregando ? 'Salvando...' : 'Salvar'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditandoCredenciais(false)}
+                        className="btn-cancelar"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="info-credenciais">
+                    <div className="info-row">
+                      <label>Email:</label>
+                      <span>{credencialEmail || '-'}</span>
                     </div>
                   </div>
                 )}

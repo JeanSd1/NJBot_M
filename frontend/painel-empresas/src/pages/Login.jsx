@@ -16,11 +16,16 @@ export default function Login() {
     setMessage('');
     try {
       const res = await api.post('/login', { email, senha: password });
-      const { token } = res.data;
+      const { token, role, empresaId } = res.data;
       if (token) {
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(res.data));
-        navigate('/empresas');
+        if (role === 'client' && empresaId) {
+          localStorage.setItem('empresaToken', token);
+          navigate(`/empresa/${empresaId}`);
+        } else {
+          navigate('/empresas');
+        }
       } else {
         setMessage('Resposta invalida do servidor');
       }
