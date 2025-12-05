@@ -15,8 +15,7 @@ export default function GerenciarUsuarios() {
     nome: '',
     email: '',
     senha: '',
-    confirmarSenha: '',
-    role: 'client'
+    confirmarSenha: ''
   });
 
   useEffect(() => {
@@ -26,7 +25,7 @@ export default function GerenciarUsuarios() {
   const carregarUsuarios = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/api/users');
+      const res = await api.get('/users');
       setUsuarios(res.data);
     } catch (err) {
       console.error('Erro ao carregar usuários:', err);
@@ -66,11 +65,11 @@ export default function GerenciarUsuarios() {
 
     try {
       setLoading(true);
-      const res = await api.post('/api/users', {
+      const res = await api.post('/users', {
         nome: formData.nome,
         email: formData.email,
         senha: formData.senha,
-        role: formData.role
+        role: 'admin'
       });
 
       setMessage('Usuario criado com sucesso!');
@@ -78,8 +77,7 @@ export default function GerenciarUsuarios() {
         nome: '',
         email: '',
         senha: '',
-        confirmarSenha: '',
-        role: 'client'
+        confirmarSenha: ''
       });
       setShowForm(false);
       carregarUsuarios();
@@ -98,7 +96,7 @@ export default function GerenciarUsuarios() {
     if (!window.confirm('Tem certeza que deseja deletar este usuario?')) return;
 
     try {
-      await api.delete(`/api/users/${id}`);
+      await api.delete(`/users/${id}`);
       setMessage('Usuario deletado com sucesso!');
       carregarUsuarios();
       setTimeout(() => setMessage(''), 3000);
@@ -185,18 +183,6 @@ export default function GerenciarUsuarios() {
                   placeholder="Confirme a senha"
                   required
                 />
-              </div>
-
-              <div className="form-group">
-                <label>Tipo de Usuario</label>
-                <select
-                  name="role"
-                  value={formData.role}
-                  onChange={handleInputChange}
-                >
-                  <option value="client">Cliente</option>
-                  <option value="admin">Admin</option>
-                </select>
               </div>
 
               <div className="form-buttons">

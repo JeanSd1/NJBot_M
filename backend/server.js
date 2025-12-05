@@ -34,9 +34,11 @@ const ADMIN_PASSWORD = process.env.LOGIN_FIXO_SENHA;
 // --- Rotas de Autenticação (Users) ---
 
 // Login: verifica user no banco (email + senha). Se não existir, tenta credencial fixa (compatibilidade)
+// Também verifica credenciais de empresa (cliente acessando sua própria empresa)
 app.post('/api/login', async (req, res) => {
   const { email, senha } = req.body;
   try {
+    // 1. Tentar login como usuário do sistema (admin/master)
     const user = await User.findOne({ email: email?.toLowerCase() });
     if (user) {
       const valid = await user.validatePassword(senha);
@@ -45,7 +47,23 @@ app.post('/api/login', async (req, res) => {
       return res.json({ token, nome: user.nome || user.email, email: user.email, role: user.role });
     }
 
-    // Fallback para credenciais fixas em .env (antigo comportamento)
+    // 2. Tentar login como cliente usando credenciais da empresa
+    const empresa = await Empresa.findOne({ 'credenciais.email': email?.toLowerCase() });
+    if (empresa) {
+      const credencial = empresa.credenciais.find(c => c.email === email?.toLowerCase());
+      if (credencial && credencial.senha === senha) {
+        // Cliente encontrado - retornar token com acesso à empresa
+        const token = jwt.sign({ 
+          empresaId: empresa._id.toString(), 
+          email: email?.toLowerCase(), 
+          role: 'client',
+          empresaNome: empresa.nome
+        }, JWT_SECRET, { expiresIn: '8h' });
+        return res.json({ token, nome: empresa.nome, email: email?.toLowerCase(), role: 'client', empresaId: empresa._id.toString() });
+      }
+    }
+
+    // 3. Fallback para credenciais fixas em .env (antigo comportamento)
     if (email === ADMIN_EMAIL && senha === ADMIN_PASSWORD) {
       // garante que exista um usuário master correspondente
       let master = await User.findOne({ email: ADMIN_EMAIL });
