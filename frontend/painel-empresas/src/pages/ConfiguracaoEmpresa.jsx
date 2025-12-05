@@ -15,6 +15,9 @@ export default function ConfiguracaoEmpresa() {
   const [loadingEmpresa, setLoadingEmpresa] = useState(true);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [credencialEmail, setCredencialEmail] = useState('');
+  const [credencialSenha, setCredencialSenha] = useState('');
+  const [credencialSenhaConfirm, setCredencialSenhaConfirm] = useState('');
 
   useEffect(() => {
     carregarEmpresa();
@@ -28,7 +31,11 @@ export default function ConfiguracaoEmpresa() {
       setPromptIA(res.data.promptIA || '');
       setIaType(res.data.iaConfig?.tipo || 'gemini');
       setClaudeModel(res.data.iaConfig?.modelo || 'claude-3-5-haiku-20241022');
-      // Não mostra a apiKey por segurança
+      // Carrega credenciais da empresa se existirem
+      if (res.data.credenciais && res.data.credenciais.length > 0) {
+        setCredencialEmail(res.data.credenciais[0].email || '');
+        // Não mostramos a senha por segurança, apenas placeholder
+      }
     } catch (err) {
       console.error('Erro ao carregar empresa:', err);
       setErrorMessage('Erro ao carregar dados da empresa');
@@ -75,6 +82,49 @@ export default function ConfiguracaoEmpresa() {
     } catch (err) {
       console.error('Erro ao salvar configuração de IA:', err);
       const msg = err?.response?.data?.error || 'Erro ao salvar configuração de IA';
+      setErrorMessage(`❌ ${msg}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCredencialSave = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setSuccessMessage('');
+    setErrorMessage('');
+
+    // Validações
+    if (!credencialEmail || !credencialEmail.includes('@')) {
+      setErrorMessage('❌ Email inválido');
+      setLoading(false);
+      return;
+    }
+
+    if (credencialSenha && credencialSenha.length < 6) {
+      setErrorMessage('❌ Senha deve ter no mínimo 6 caracteres');
+      setLoading(false);
+      return;
+    }
+
+    if (credencialSenha && credencialSenha !== credencialSenhaConfirm) {
+      setErrorMessage('❌ As senhas não coincidem');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      await api.put(`/empresas/${id}/credenciais`, {
+        email: credencialEmail,
+        senha: credencialSenha || undefined
+      });
+      setSuccessMessage('✅ Credenciais do cliente atualizadas com sucesso!');
+      setCredencialSenha('');
+      setCredencialSenhaConfirm('');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err) {
+      console.error('Erro ao salvar credenciais:', err);
+      const msg = err?.response?.data?.error || 'Erro ao salvar credenciais';
       setErrorMessage(`❌ ${msg}`);
     } finally {
       setLoading(false);
@@ -245,6 +295,60 @@ export default function ConfiguracaoEmpresa() {
               disabled={loading}
             >
               {loading ? 'Salvando...' : 'Salvar Configuração de IA'}
+            </button>
+          </form>
+        </section>
+
+        {/* Seção de Credenciais do Cliente */}
+        <section className="config-section">
+          <h2>Credenciais do Cliente</h2>
+          <p className="config-description">
+            Configure o email e senha que o cliente usará para acessar sua empresa.
+          </p>
+
+          <form onSubmit={handleCredencialSave}>
+            <div className="form-group">
+              <label htmlFor="credencialEmail">Email do Cliente:</label>
+              <input
+                id="credencialEmail"
+                type="email"
+                value={credencialEmail}
+                onChange={(e) => setCredencialEmail(e.target.value)}
+                placeholder="email@exemplo.com"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="credencialSenha">Nova Senha (deixe em branco para manter):</label>
+              <input
+                id="credencialSenha"
+                type="password"
+                value={credencialSenha}
+                onChange={(e) => setCredencialSenha(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+              />
+            </div>
+
+            {credencialSenha && (
+              <div className="form-group">
+                <label htmlFor="credencialSenhaConfirm">Confirmar Senha:</label>
+                <input
+                  id="credencialSenhaConfirm"
+                  type="password"
+                  value={credencialSenhaConfirm}
+                  onChange={(e) => setCredencialSenhaConfirm(e.target.value)}
+                  placeholder="Confirme a senha"
+                />
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="btn-salvar"
+              disabled={loading || !credencialEmail.trim()}
+            >
+              {loading ? 'Salvando...' : 'Salvar Credenciais do Cliente'}
             </button>
           </form>
         </section>

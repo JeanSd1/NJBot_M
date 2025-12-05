@@ -769,6 +769,46 @@ app.put('/api/empresas/:id/prompt', requireAuth, async (req, res) => {
   }
 });
 
+// Atualizar credenciais do cliente
+app.put('/api/empresas/:id/credenciais', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { email, senha } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'ID inválido' });
+    }
+
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({ error: 'Email inválido' });
+    }
+
+    const empresa = await Empresa.findById(id);
+    if (!empresa) {
+      return res.status(404).json({ error: 'Empresa não encontrada' });
+    }
+
+    // Atualiza email (sempre atualiza)
+    if (!empresa.credenciais) empresa.credenciais = [];
+    if (empresa.credenciais.length === 0) {
+      empresa.credenciais.push({ email: email.toLowerCase(), senha: senha || 'default123' });
+    } else {
+      empresa.credenciais[0].email = email.toLowerCase();
+      if (senha) empresa.credenciais[0].senha = senha;
+    }
+
+    await empresa.save();
+
+    res.json({ 
+      message: 'Credenciais do cliente atualizadas com sucesso',
+      credenciais: { email: empresa.credenciais[0].email }
+    });
+  } catch (error) {
+    console.error('❌ Erro ao atualizar credenciais:', error);
+    res.status(500).json({ error: 'Erro ao atualizar credenciais.' });
+  }
+});
+
 app.post('/api/empresas/:id/configurar-ia', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
