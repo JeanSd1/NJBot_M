@@ -5,6 +5,7 @@ import CadastroBot from './pages/CadastroBot';
 import ListaEmpresas from './pages/ListaEmpresas';
 import ConfiguracaoEmpresa from './pages/ConfiguracaoEmpresa';
 import EmpresaDashboard from './pages/EmpresaDashboard';
+import GerenciarUsuarios from './pages/GerenciarUsuarios';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
         <Route path="/empresas" element={<ProtectedRoute><ListaEmpresas /></ProtectedRoute>} />
         <Route path="/empresas/:id/configurar" element={<ProtectedRoute><ConfiguracaoEmpresa /></ProtectedRoute>} />
         <Route path="/empresa/:id" element={<EmpresaDashboard />} />
+        <Route path="/gerenciar-usuarios" element={<ProtectedRoute><GerenciarUsuarios /></ProtectedRoute>} />
       </Routes>
     </Router>
   );

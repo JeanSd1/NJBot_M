@@ -157,6 +157,7 @@ export default function ListaEmpresas() {
         <h1>Empresas</h1>
         <div className="header-actions">
           <button onClick={() => navigate('/cadastro')} className="btn-novo">+ Nova Empresa</button>
+          <button onClick={() => navigate('/gerenciar-usuarios')} className="btn-gerenciar-usuarios">Gerenciar Usuários</button>
           <button onClick={() => {
             localStorage.removeItem('token');
             navigate('/');

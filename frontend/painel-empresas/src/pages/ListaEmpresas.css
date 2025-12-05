@@ -55,6 +55,30 @@
   transform: translateY(0);
 }
 
+.btn-gerenciar-usuarios {
+  padding: 12px 24px;
+  background: #667eea;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.btn-gerenciar-usuarios:hover {
+  background: #764ba2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.btn-gerenciar-usuarios:active {
+  transform: translateY(0);
+}
+
 .btn-sair {
   padding: 12px 24px;
   background: #ef4444;
